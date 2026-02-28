@@ -44,7 +44,6 @@ const items = [
   },
   { title: "Book Library", url: "/dashboard/books", icon: LibraryBig },
   { title: "Orders Tracking", url: "/dashboard/orders", icon: TicketCheck },
-  { title: "Payments", url: "#", icon: CreditCardIcon },
 ];
 const AppSidebar = () => {
   return (

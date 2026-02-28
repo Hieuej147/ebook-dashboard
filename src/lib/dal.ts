@@ -110,12 +110,6 @@ export const getAdminBooks = async (params: {
   return res.json();
 };
 
-// Hoàn thiện hàm lấy chi tiết sách
-export const getBookById = async (id: string) => {
-  const res = await fetch(`/api/books/${id}`);
-  if (!res.ok) return null;
-  return res.json();
-};
 export const getAllOrders = async (params: {
   page: number;
   limit?: number;
@@ -131,6 +125,32 @@ export const getAllOrders = async (params: {
   if (params.search) query.append("search", params.search);
 
   const res = await fetch(`/api/orders?${query.toString()}`);
+
+  if (!res.ok) throw new Error("Failed to fetch through proxy");
+
+  return res.json();
+};
+export const getAllcategories = async (params: {
+  isActive?: boolean;
+  search?: string;
+  page?: number;
+  limit?: number;
+}) => {
+  const query = new URLSearchParams({
+    page: params.page?.toString() || "1",
+    limit: params.limit?.toString() || "10",
+  });
+
+  // 1. Thêm Search nếu có
+  if (params.search) query.append("search", params.search);
+
+  // 3. QUAN TRỌNG: Thêm isActive (phải chuyển boolean thành string)
+  if (params.isActive !== undefined) {
+    query.append("isActive", params.isActive.toString());
+  }
+
+  // Gọi tới Route Handler của Next.js (Proxy)
+  const res = await fetch(`/api/category?${query.toString()}`);
 
   if (!res.ok) throw new Error("Failed to fetch through proxy");
 

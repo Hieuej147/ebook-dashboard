@@ -23,21 +23,21 @@ export async function GET(req: Request) {
   return NextResponse.json(data);
 }
 
-export async function POST(req: Request) {
-  const body = await req.json();
+// export async function POST(req: Request) {
+//   const body = await req.json();
 
-  const res = await fetchWithAuth("/books", {
-    headers: { "Content-Type": "application/json" },
-    method: "POST",
-    body: JSON.stringify(body),
-  });
+//   const res = await fetchWithAuth("/books", {
+//     headers: { "Content-Type": "application/json" },
+//     method: "POST",
+//     body: JSON.stringify(body),
+//   });
 
-  const data = await res.json();
-  if (!res.ok) {
-    return NextResponse.json(
-      { message: data.message || "Error to take all books" },
-      { status: res.status },
-    );
-  }
-  return NextResponse.json(data);
-}
+//   const data = await res.json();
+//   if (!res.ok) {
+//     return NextResponse.json(
+//       { message: data.message || "Error to take all books" },
+//       { status: res.status },
+//     );
+//   }
+//   return NextResponse.json(data);
+// }

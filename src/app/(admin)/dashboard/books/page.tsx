@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { Search, Plus, Filter } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -14,15 +14,6 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
-import {
-  DropdownMenu,
-  DropdownMenuCheckboxItem,
-  DropdownMenuContent,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-// Components nội bộ của bạn
 import CategoryFolder from "@/components/CategoryFolder";
 import DialogBook from "@/components/DialogBook";
 import { BookRow } from "@/components/RowBook";
@@ -30,6 +21,8 @@ import { getAdminBooks } from "@/lib/dal";
 import Link from "next/link";
 import { EditBookID } from "@/components/SheetEdit";
 import { FilterButton } from "@/components/ui/FilterButton";
+import { useRouter } from "next/navigation";
+import { cn } from "@/lib/utils";
 
 export default function BooksDashboard() {
   // --- STATE MANAGEMENT ---
@@ -48,6 +41,7 @@ export default function BooksDashboard() {
   });
   const [SelectedBookID, setSelectedBookID] = useState<null | string>(null);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const [isPending, startTransition] = useTransition();
 
   // --- API CALL (PROXY ROUTE) ---
   const fetchAdminData = async () => {
@@ -90,15 +84,17 @@ export default function BooksDashboard() {
   };
   useEffect(() => {
     fetchAdminData();
-    fetchCategoriesFlat();
   }, [filters]);
   useEffect(() => {
     fetchCates();
+    fetchCategoriesFlat();
   }, []);
   // --- LOGIC PHÂN TRANG ---
   const handlePageChange = (newPage: number) => {
     if (newPage >= 1 && newPage <= meta.totalPages) {
-      setFilters((prev) => ({ ...prev, page: newPage }));
+      startTransition(() => {
+        setFilters((prev) => ({ ...prev, page: newPage }));
+      });
     }
   };
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -183,8 +179,15 @@ export default function BooksDashboard() {
         {/* Gallery Grid với ScrollArea */}
         <div className="bg-primary-foreground rounded-3xl border shadow-sm overflow-hidden">
           <ScrollArea className="h-[calc(100vh-280px)] p-6">
-            <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6">
-              {isLoading ? (
+            <div
+              className={cn(
+                "grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6 transition-opacity duration-300",
+                (isPending || isLoading) && books.length > 0
+                  ? "pointer-events-none"
+                  : "opacity-100",
+              )}
+            >
+              {isLoading && books.length === 0 ? (
                 // Skeleton Loading Placeholder
                 Array.from({ length: 8 }).map((_, i) => (
                   <div
@@ -276,17 +279,17 @@ export default function BooksDashboard() {
             <h2 className="text-xl font-black text-slate-900 tracking-tight">
               Categories
             </h2>
-            <Button
-              variant="link"
-              className="text-purple-600 text-xs font-bold p-0"
+            <Link
+              href="/dashboard/categories"
+              className="text-purple-600 text-xs font-bold p-0 hover:underline"
             >
               See All
-            </Button>
+            </Link>
           </div>
 
           <div className="space-y-4">
             <ScrollArea className="h-[630px]">
-              {isLoading ? (
+              {isLoading && categories.length === 0 ? (
                 // Skeleton cho Category
                 [1, 2, 3].map((i) => (
                   <div

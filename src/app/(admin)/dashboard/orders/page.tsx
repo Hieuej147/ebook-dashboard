@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useTransition } from "react";
 import {
   Search,
   Eye,
@@ -40,23 +40,11 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination";
 // Component màu sắc trạng thái dựa trên OrderStatus của Prisma
-const StatusBadge = ({ status }: { status: string }) => {
-  const styles: any = {
-    PENDING: "bg-yellow-100 text-yellow-700 border-yellow-200",
-    SHIPPED: "bg-blue-100 text-blue-700 border-blue-200",
-    DELIVERED: "bg-green-100 text-green-700 border-green-200",
-    CANCELLED: "bg-red-100 text-red-700 border-red-200",
-  };
-  return (
-    <Badge variant="outline" className={`${styles[status] || ""} font-bold`}>
-      {status}
-    </Badge>
-  );
-};
-
+import { OrderDetailDialog } from "@/components/OrderDetailDialog";
 export default function AdminOrdersPage() {
   const [orders, setOrders] = useState([]);
-
+  const [selectedOrder, setSelectedOrder] = useState<any>(null);
+  const [open, setOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [filters, setFilters] = useState({
     page: 1,
@@ -66,6 +54,7 @@ export default function AdminOrdersPage() {
   });
   const [meta, setMeta] = useState({ total: 0, page: 1, limit: 10 });
   const [isLoading, setIsLoading] = useState(true);
+  const [isPending, startTransition] = useTransition();
 
   // Fetch data từ route @Get('admin/all')
   const fetchOrders = async () => {
@@ -101,7 +90,9 @@ export default function AdminOrdersPage() {
 
   const handlePageChange = (newPage: number) => {
     if (newPage >= 1 && newPage <= meta.total) {
-      setFilters((prev) => ({ ...prev, page: newPage }));
+      startTransition(() => {
+        setFilters((prev) => ({ ...prev, page: newPage }));
+      });
     }
   };
 
@@ -194,7 +185,7 @@ export default function AdminOrdersPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {isLoading ? (
+            {isLoading && orders.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={7} className="text-center py-20">
                   Đang tải đơn hàng...
@@ -206,6 +197,10 @@ export default function AdminOrdersPage() {
                   key={order.id}
                   order={order}
                   onRefresh={fetchOrders} // Truyền hàm fetch vào để TableCell gọi lại sau khi update
+                  onViewDetail={(orderData) => {
+                    setSelectedOrder(orderData); // Bắt đơn hàng khi bấm nút xem
+                    setOpen(true);
+                  }}
                 />
               ))
             )}
@@ -228,9 +223,7 @@ export default function AdminOrdersPage() {
                   }
                 />
               </PaginationItem>
-
               {renderPaginationItems()}
-
               <PaginationItem>
                 <PaginationNext
                   href="#"
@@ -247,6 +240,13 @@ export default function AdminOrdersPage() {
               </PaginationItem>
             </PaginationContent>
           </Pagination>
+          {selectedOrder && (
+            <OrderDetailDialog
+              order={selectedOrder}
+              open={open}
+              onOpenChange={setOpen}
+            />
+          )}
         </div>
       </div>
     </div>

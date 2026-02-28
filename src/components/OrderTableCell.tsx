@@ -24,9 +24,14 @@ import { toast } from "sonner";
 interface OrderRowProps {
   order: any; // Sau này Hiếu thay bằng Type OrderResponseDto nhé
   onRefresh: () => void;
+  onViewDetail: (order: any) => void; // Thêm prop này
 }
 
-export const OrderTableCell = ({ order, onRefresh }: OrderRowProps) => {
+export const OrderTableCell = ({
+  order,
+  onRefresh,
+  onViewDetail,
+}: OrderRowProps) => {
   // Lấy danh sách tên sách để hiển thị tóm tắt
   const mainItem = order.items[0]?.bookTitle || "N/A";
   const extraItemsCount = order.items.length - 1;
@@ -50,7 +55,7 @@ export const OrderTableCell = ({ order, onRefresh }: OrderRowProps) => {
   return (
     <TableRow className="group">
       <TableCell className="font-mono text-[10px] text-purple-600">
-        #{order.id.slice(-6).toUpperCase()}{" "}
+        {order.orderNumber}
         {/* Chỉ hiện 6 ký tự cuối cho gọn */}
       </TableCell>
 
@@ -96,7 +101,10 @@ export const OrderTableCell = ({ order, onRefresh }: OrderRowProps) => {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-48">
-            <DropdownMenuItem className="gap-2">
+            <DropdownMenuItem
+              className="gap-2"
+              onClick={() => onViewDetail(order)}
+            >
               <Eye size={14} /> Xem chi tiết đơn
             </DropdownMenuItem>
 

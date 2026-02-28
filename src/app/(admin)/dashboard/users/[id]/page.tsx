@@ -21,6 +21,7 @@ import { useParams } from "next/navigation";
 import { use, useEffect, useState } from "react";
 import { User } from "../columns";
 import { TableSkeleton } from "@/components/TableSkeleton";
+import UserOrdersCard from "@/components/UserOrdersCard";
 const UserDetailPage = ({ params }: { params: Promise<{ id: string }> }) => {
   const { id } = useParams();
   const [user, setUser] = useState<User | null>(null);
@@ -133,7 +134,7 @@ const UserDetailPage = ({ params }: { params: Promise<{ id: string }> }) => {
           <UserInfoCard user={user} onUserUpdate={handleUpdate} />
           {/**Card List container */}
           <div className="bg-primary-foreground p-4 rounded-lg">
-            <Todolist />
+            <UserOrdersCard userId={id as string} />
           </div>
         </div>
         {/**Right */}
