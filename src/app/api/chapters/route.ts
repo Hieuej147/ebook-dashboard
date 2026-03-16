@@ -1,27 +1,34 @@
-import { fetchWithAuth } from "@/lib/dal";
+import axiosServer from "@/lib/axios-server";
+import { handleApiError } from "@/lib/api-error";
 import { NextResponse } from "next/server";
+import { getSession } from "@/lib/session";
+import { createChaptersApiSchema } from "@/lib/zod";
 
 export async function POST(req: Request) {
+  // ✅ Auth check
+  const session = await getSession();
+  if (!session) {
+    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+  }
+
   try {
     const body = await req.json();
 
-    const res = await fetchWithAuth("/chapters", {
-      headers: { "Content-Type": "application/json" },
-      method: "POST",
-      body: JSON.stringify(body),
-    });
-
-    const data = await res.json();
-
-    if (!res.ok) {
-      return NextResponse.json(data, { status: res.status });
+    // ✅ Validate
+    const result = createChaptersApiSchema.safeParse(body);
+    if (!result.success) {
+      return NextResponse.json(
+        {
+          message: "Invalid input",
+          errors: result.error.flatten().fieldErrors,
+        },
+        { status: 400 },
+      );
     }
 
-    return NextResponse.json(data);
+    const res = await axiosServer.post("/chapters", result.data);
+    return NextResponse.json(res.data);
   } catch (error) {
-    return NextResponse.json(
-      { message: "Internal Server Error" },
-      { status: 500 },
-    );
+    return handleApiError(error, "Không thể tạo chương mới");
   }
 }

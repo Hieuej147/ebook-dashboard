@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Sparkles, Loader2, Maximize2, Minimize2 } from "lucide-react";
@@ -26,8 +26,29 @@ const ChapterEditTab = ({
   onContentChange,
   isFullScreen,
 }: ChapterTabProps) => {
+  const [localText, setLocalText] = useState(chapter?.content || "");
+  // ✅ Sync khi đổi sang chương khác
+  useEffect(() => {
+    setLocalText(chapter?.content || "");
+  }, [chapter?.chapterNumber]);
+  // ✅ Sync khi AI viết xong (isGenerating: true → false)
+  const prevGenerating = useRef(isGenerating);
+  useEffect(() => {
+    if (prevGenerating.current === true && isGenerating === false) {
+      setLocalText(chapter?.content || "");
+    }
+    prevGenerating.current = isGenerating;
+  }, [isGenerating, chapter?.content]);
+  const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setLocalText(e.target.value);
+  };
+  const handleBlur = () => {
+    if (localText !== chapter?.content) {
+      onContentChange?.(localText);
+    }
+  };
   return (
-    <div className="h-full w-full flex flex-col bg-white">
+    <div className="h-full w-full flex flex-col bg-primary-foreground">
       {/* VÙNG SOẠN THẢO (EDITOR) */}
       <div className="flex-1 flex flex-col relative overflow-hidden">
         {isGenerating && (
@@ -44,8 +65,9 @@ const ChapterEditTab = ({
           </div>
         )}
         <textarea
-          value={chapter?.content || ""}
-          onChange={(e) => onContentChange!(e.target.value)}
+          value={localText}
+          onChange={handleChange}
+          onBlur={handleBlur}
           readOnly={isGenerating}
           placeholder={
             isGenerating

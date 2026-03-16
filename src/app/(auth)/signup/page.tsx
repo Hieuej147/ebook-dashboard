@@ -96,7 +96,7 @@ export default function Register() {
                   type="email"
                   placeholder="Enter your email"
                   className={cn(
-                    "pl-11 h-12",
+                    "pl-11 h-12 focus-visible:ring-purple-500",
                     errors.email &&
                       "border-destructive focus-visible:ring-destructive",
                   )}
@@ -136,7 +136,7 @@ export default function Register() {
                   type={showPassword ? "text" : "password"}
                   placeholder="Create a password"
                   className={cn(
-                    "pl-11 pr-11 h-12",
+                    "pl-11 h-12 focus-visible:ring-purple-500",
                     errors.password &&
                       "border-destructive focus-visible:ring-destructive",
                   )}
@@ -187,7 +187,7 @@ export default function Register() {
                   type={showConfirmPassword ? "text" : "password"}
                   placeholder="Confirm your password"
                   className={cn(
-                    "pl-11 pr-11 h-12",
+                    "pl-11 h-12 focus-visible:ring-purple-500",
                     errors.confirmPassword &&
                       "border-destructive focus-visible:ring-destructive",
                   )}
@@ -218,7 +218,7 @@ export default function Register() {
             <Button
               disabled={isPending}
               type="submit"
-              className="w-full h-12 text-base font-semibold mt-4"
+              className="w-full h-12 text-base font-semibold bg-purple-600 hover:bg-purple-700 text-white"
             >
               {isPending ? "Creating account..." : "Sign Up with Email"}
             </Button>
@@ -230,7 +230,7 @@ export default function Register() {
               <button
                 type="button"
                 onClick={() => router.push("/signin")}
-                className="text-foreground font-bold hover:underline"
+                className="text-purple-600 font-bold hover:underline"
               >
                 Sign in
               </button>

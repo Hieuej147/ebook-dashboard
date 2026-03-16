@@ -2,7 +2,7 @@
 import { Suspense } from "react";
 
 import { TableSkeleton } from "@/components/TableSkeleton";
-import UserTableContainer from "@/components/UserTableContainer";
+import UserTableContainer from "@/components/users/UserTableContainer";
 
 export default async function UserListPage() {
   return (

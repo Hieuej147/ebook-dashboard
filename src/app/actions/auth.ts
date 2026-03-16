@@ -1,8 +1,9 @@
 // app/actions/auth.ts
 "use server";
 
-import { createSession, deleteSession } from "@/lib/session";
-import { FormState } from "@/lib/type";
+import { createSession, deleteSession, getSession } from "@/lib/session";
+import { decodeJwtExpiry } from "@/lib/token";
+import { FormState } from "@/lib/types";
 import { loginSchema, signupSchema } from "@/lib/zod";
 import { redirect } from "next/navigation";
 
@@ -69,7 +70,14 @@ export async function signinAction(
   const userData = result.user;
 
   if (response.ok) {
-    // result lúc này đã chứa id, name, role, accessToken... từ NestJS
+    // ✅ Decode từ token thực thay vì hardcode
+    const atExpiresAt =
+      decodeJwtExpiry(result.accessToken) ?? Date.now() + 15 * 60 * 1000;
+
+    const sessionExpiresAt =
+      decodeJwtExpiry(result.refreshToken) ??
+      Date.now() + 7 * 24 * 60 * 60 * 1000;
+
     await createSession({
       user: {
         id: userData.id,
@@ -80,71 +88,90 @@ export async function signinAction(
       },
       accessToken: result.accessToken,
       refreshToken: result.refreshToken,
+      atExpiresAt, // ✅ chính xác từ token
+      sessionExpiresAt, // ✅ chính xác từ token
     });
 
     redirect("/dashboard");
   } else {
-    // Xử lý thông báo lỗi từ NestJS trả về (thường là result.message)
     return {
       message: result.message?.message || result.message || "Login failed",
     };
   }
 }
 
-let isRefreshing = false;
-let refreshPromise: Promise<string | null> | null = null;
+// const globalRef = global as unknown as {
+//   refreshPromise: Promise<string | null> | null;
+// };
+// export const refreshToken = async (oldRefreshToken: string) => {
+//   if (globalRef.refreshPromise) {
+//     console.log("⏳ Dùng chung Promise refresh đang chạy...");
+//     return globalRef.refreshPromise;
+//   }
+//   globalRef.refreshPromise = (async () => {
+//     try {
+//       const response = await fetch(
+//         `${process.env.NESTJS_API_URL}/auth/refresh`,
+//         {
+//           method: "POST",
+//           headers: {
+//             "Content-Type": "application/json",
+//             Authorization: `Bearer ${oldRefreshToken}`,
+//           },
+//         },
+//       );
 
-export const refreshToken = async (oldRefreshToken: string) => {
-  if (isRefreshing && refreshPromise) {
-    return refreshPromise;
-  }
-  isRefreshing = true;
-  refreshPromise = (async () => {
-    try {
-      const response = await fetch(
-        `${process.env.NESTJS_API_URL}/auth/refresh`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${oldRefreshToken}`,
-          },
-        },
-      );
+//       if (!response.ok) {
+//         return null;
+//       }
 
-      if (!response.ok) {
-        return null;
-      }
+//       const { accessToken, refreshToken } = await response.json();
+//       // update session with new tokens
+//       const updateRes = await fetch(
+//         `${process.env.NESTJS_API_URL_PUBLIC}/api/auth/update`,
+//         {
+//           method: "POST",
+//           body: JSON.stringify({
+//             accessToken,
+//             refreshToken,
+//           }),
+//         },
+//       );
 
-      const { accessToken, refreshToken } = await response.json();
-      // update session with new tokens
-      const updateRes = await fetch(
-        `${process.env.NESTJS_API_URL_PUBLIC}/api/auth/update`,
-        {
-          method: "POST",
-          body: JSON.stringify({
-            accessToken,
-            refreshToken,
-          }),
-        },
-      );
-
-      if (!updateRes.ok) throw new Error("Failed to update the tokens");
-
-      return accessToken;
-    } catch (err) {
-      console.error("Refresh Token failed:", err);
-      return null;
-    } finally {
-      isRefreshing = false;
-      refreshPromise = null;
-    }
-  })();
-  return refreshPromise;
-};
+//       if (updateRes.ok) {
+//         console.log("updated success");
+//       } else {
+//         console.log("updated Failed");
+//       }
+//       return accessToken;
+//     } catch (err) {
+//       console.error("❌ Refresh Token failed:", err);
+//       return null;
+//     } finally {
+//       globalRef.refreshPromise = null;
+//     }
+//   })();
+//   return globalRef.refreshPromise;
+// };
 export async function logoutAction() {
-  await deleteSession();
+  const session = await getSession();
 
-  // Đá về trang chủ hoặc trang login
+  // ✅ Gọi NestJS logout để xóa refreshToken trong DB
+  if (session?.accessToken) {
+    try {
+      await fetch(`${process.env.NESTJS_API_URL}/auth/logout`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${session.accessToken}`,
+          "Content-Type": "application/json",
+        },
+      });
+    } catch (error) {
+      console.error("NestJS logout failed:", error);
+      // ✅ Dù NestJS lỗi vẫn xóa session FE
+    }
+  }
+
+  await deleteSession();
   redirect("/signin");
 }

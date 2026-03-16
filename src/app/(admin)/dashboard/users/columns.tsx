@@ -1,7 +1,7 @@
 "use client";
 import { ColumnDef } from "@tanstack/react-table";
 import { cn } from "@/lib/utils";
-import { UserActions } from "@/components/UserActions";
+import { UserActions } from "@/components/users/UserActions";
 enum Role {
   USER,
   ADMIN,

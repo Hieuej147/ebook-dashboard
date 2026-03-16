@@ -19,6 +19,7 @@ import {
   Minimize2,
   Maximize2,
   Sparkles,
+  Check,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -34,8 +35,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ChapterSidebar from "@/components/ChapterSidebar";
 import { arrayMove } from "@dnd-kit/sortable";
-import { useCopilotChat, useDefaultTool } from "@copilotkit/react-core";
-import { useLangChainAgent } from "@/app/provider/AgentContext";
+import { useCopilotChat, useLangGraphInterrupt } from "@copilotkit/react-core";
 import { Loader2 } from "lucide-react";
 import { ChapterEditTab, ChapterViewTab } from "@/components/ChapterTab";
 import { Role, TextMessage } from "@copilotkit/runtime-client-gql";
@@ -44,119 +44,109 @@ import {
   ResizablePanel,
   ResizablePanelGroup,
 } from "@/components/ui/resizable";
+import "@copilotkit/react-core/v2/styles.css";
+import { useLangChainAgent } from "@/app/provider/AgentContext";
 
 interface Chapter {
-  id: string;
   title: string;
-  description: string | null;
-  content: string | null;
+  description: string;
+  content: string;
   chapterNumber: number;
 }
+
 const EditPage = () => {
   const { id } = useParams();
-  const agent = useLangChainAgent();
-  const { appendMessage } = useCopilotChat();
   const [mode, setMode] = useState<"edit" | "view">("edit");
   const [zoom, setZoom] = useState(100);
-  const [isPending, startTransition] = useTransition();
   const [isOpenSideBar, setIsSideBar] = useState(true);
   const [isSavingAll, setIsSavingAll] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [localChapters, setLocalChapters] = useState<Chapter[]>([]);
-  const [localSelectedNumber, setLocalSelectedNumber] = useState(1);
   const [isFullScreen, setIsFullScreen] = useState(false);
-  const [isContent, setIsContent] = useState("");
   const [isTabletOrMobile, setisTabletOrMobile] = useState(false);
-  useDefaultTool({
-    render: ({ name, status }) => {
-      const textStyles = "text-gray-500 text-sm mt-2";
-      if (status !== "complete") {
-        return <p className={textStyles}>Calling {name}...</p>;
-      }
-      return <p className={textStyles}>Called {name}!</p>;
-    },
-  });
+  const [localChapters, setLocalChapters] = useState<any[]>([]);
+  const [actualBookId, setActualBookId] = useState<string>("");
+  const [isPending, startTransition] = useTransition();
 
-  useEffect(() => {
-    const checkMobile = () => setisTabletOrMobile(window.innerWidth < 1024);
-    checkMobile();
-    window.addEventListener("resize", checkMobile);
-    return () => window.removeEventListener("resize", checkMobile);
-  }, []);
-  useEffect(() => {
-    async function restoreData() {
-      if (!id) return;
-      setIsLoading(true); // Bắt đầu load
+  const { state, setState, running: isRunning, nodeName } = useLangChainAgent();
+  const { appendMessage } = useCopilotChat();
 
-      try {
-        // Gọi song song 2 API để tối ưu tốc độ
-        const [bookRes, chaptersRes] = await Promise.all([
-          fetch(`/api/books/${id}`),
-          fetch(`/api/chapters/${id}`),
-        ]);
+  const isWritingChapter = isRunning && nodeName === "write_chapter_node";
+  const selectedChapterNumber = state.selectedChapterNumber || 1;
 
-        if (!bookRes.ok || !chaptersRes.ok) throw new Error("API Error");
-
-        const bookData = await bookRes.json();
-        const chaptersData = await chaptersRes.json();
-
-        console.log("Check data reload:", { bookData, chaptersData });
-        setLocalChapters(chaptersData);
-        setLocalSelectedNumber(1);
-        agent.setState({
-          ...agent.state,
-          book: {
-            title: bookData.title,
-            topic: bookData.subtitle || bookData.topic || "",
-            author: bookData.author,
-            chapters: chaptersData,
-          },
-          selectedChapterNumber: 1,
-        });
-      } catch (error) {
-        console.error("Lỗi khôi phục dữ liệu:", error);
-      } finally {
-        setIsLoading(false); // Chắc chắn sẽ tắt Loader dù thành công hay thất bại
-      }
-    }
-
-    restoreData();
-  }, [id]);
-
-  // --- OPTIMIZATION: Lấy nội dung chương hiện tại một cách trực tiếp ---
   const chapters = useMemo(() => {
-    const agentChapters = agent.state.book?.chapters;
-    // Nếu Agent có dữ liệu thì dùng, không thì dùng bản backup local
-    return agentChapters && agentChapters.length > 0
-      ? agentChapters
-      : localChapters;
-  }, [agent.state.book?.chapters, localChapters]);
-  const currentChapterContent = useMemo(() => {
-    return chapters.find(
-      (ch: any) => Number(ch.chapterNumber) === Number(localSelectedNumber),
-    );
-  }, [chapters, localSelectedNumber]);
-  useEffect(() => {
-    setIsContent(currentChapterContent?.content || "");
-  }, [currentChapterContent]);
+    if (state.book?.chapters?.length > 0) {
+      return state.book.chapters;
+    }
+    return localChapters;
+  }, [state.book?.chapters, localChapters]);
 
-  // --- HANDLERS: Xử lý sự kiện UI ---
+  // const chapters = state.book?.chapters || [];
+
+  // 2. TÌM CHƯƠNG HIỆN TẠI SIÊU NHẸ
+  const currentChapterContent = useMemo(() => {
+    const found = chapters.find(
+      (ch: any) => Number(ch.chapterNumber) === Number(selectedChapterNumber),
+    );
+    return (
+      found || {
+        title: "",
+        description: "",
+        content: "",
+        chapterNumber: selectedChapterNumber,
+      }
+    );
+  }, [chapters, selectedChapterNumber]);
+
   const handleZoomIn = () => setZoom((prev) => Math.min(prev + 10, 200));
   const handleZoomOut = () => setZoom((prev) => Math.max(prev - 10, 50));
+  const refreshChapters = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/chapters/${id}`);
+      if (!res.ok) throw new Error("Fetch failed");
+
+      const chaptersData = await res.json();
+      const sanitizedChapters = chaptersData.map((ch: any) => ({
+        ...ch,
+        description: ch.description ?? "",
+        content: ch.content ?? "",
+      }));
+      setLocalChapters(sanitizedChapters); // ✅ Thêm dòng này
+      // Cập nhật State ngầm
+      setState((prevState: any) => ({
+        ...prevState,
+        book: {
+          ...prevState.book,
+          chapters: sanitizedChapters,
+        },
+      }));
+    } catch (error) {
+      console.error("Lỗi đồng bộ:", error);
+    }
+  }, [id, setState]);
   const handleSelectChapter = useCallback(
     (chapterNumber: number) => {
-      setLocalSelectedNumber(chapterNumber);
-      startTransition(() => {
-        agent.setState({
-          ...agent.state,
-          selectedChapterNumber: chapterNumber,
-        });
+      setState({
+        ...state,
+        selectedChapterNumber: chapterNumber,
       });
       setIsSideBar(false);
     },
-
-    [agent.setState],
+    [state],
   );
+
+  // --- Thêm hàm này vào EditPage.tsx (Gần chỗ handleGenerateChapterContent) ---
+  const handleAddChapter = useCallback(() => {
+    if (isRunning) return;
+
+    appendMessage(
+      new TextMessage({
+        content:
+          "Please suggest and add one new chapter to the end of the book outline.",
+        role: Role.User,
+      }),
+    );
+  }, [isRunning]);
+
   const handleDeleteChapter = useCallback(
     (targetChapterNumber: number) => {
       const filtered = chapters.filter(
@@ -167,100 +157,145 @@ const EditPage = () => {
         chapterNumber: idx + 1,
       }));
 
-      // Nếu xóa chương đang chọn, tự động nhảy về chương trước đó hoặc chương 1
-      let nextChapterNumber = localSelectedNumber;
-      if (targetChapterNumber === localSelectedNumber) {
+      let nextChapterNumber = selectedChapterNumber;
+      if (targetChapterNumber === selectedChapterNumber) {
         nextChapterNumber = Math.max(1, targetChapterNumber - 1);
-      } else if (targetChapterNumber < localSelectedNumber) {
-        nextChapterNumber = localSelectedNumber - 1;
+      } else if (targetChapterNumber < selectedChapterNumber) {
+        nextChapterNumber = selectedChapterNumber - 1;
       }
-      agent.setState({
-        ...agent.state,
+      setState({
+        ...state,
         selectedChapterNumber: nextChapterNumber,
-        book: { ...agent.state.book, chapters: updated },
+        book: { ...state.book, chapters: updated },
       });
     },
-
-    [chapters, localSelectedNumber, agent],
+    [chapters, selectedChapterNumber, state, setState],
   );
+
   const handleReorderChapters = useCallback(
     (oldIndex: number, newIndex: number) => {
       const newArray = arrayMove(chapters, oldIndex, newIndex);
-      agent.setState({
-        ...agent.state,
-        book: { ...agent.state.book, chapters: newArray },
+      setState({
+        ...state,
+        book: { ...state.book, chapters: newArray },
       });
     },
-    [chapters, agent.state, agent.setState],
+    [chapters, state, setState],
   );
+
+  // 3. TỐI ƯU HÀM GÕ PHÍM BẰNG startTransition
   const handleContentChange = useCallback(
     (val: string) => {
-      // LUÔN dùng localSelectedNumber ở đây để đảm bảo lưu đúng chương đang gõ
-      const targetNumber = localSelectedNumber;
+      const targetNumber = selectedChapterNumber;
 
-      setLocalChapters((prev) => {
-        const newArr = [...prev];
-        const idx = newArr.findIndex(
-          (ch) => Number(ch.chapterNumber) === Number(targetNumber),
-        );
-        if (idx !== -1) newArr[idx] = { ...newArr[idx], content: val };
-        return newArr;
-      });
-
-      // Sync với Agent để AI Assistant không bị "tối cổ"
-      agent.setState({
-        ...agent.state,
-        book: {
-          ...agent.state.book,
-          chapters: chapters.map((ch: any) =>
-            Number(ch.chapterNumber) === Number(targetNumber)
-              ? { ...ch, content: val }
-              : ch,
-          ),
-        },
+      startTransition(() => {
+        setState((prevState: any) => {
+          const currentChapters = prevState.book?.chapters || [];
+          return {
+            ...prevState,
+            book: {
+              ...prevState.book,
+              chapters: currentChapters.map((ch: any) =>
+                Number(ch.chapterNumber) === Number(targetNumber)
+                  ? { ...ch, content: val }
+                  : ch,
+              ),
+            },
+          };
+        });
       });
     },
-    [localSelectedNumber, chapters, agent],
+    [selectedChapterNumber, setState],
   );
+
   const handleSaveChanges = async () => {
     setIsSavingAll(true);
     try {
-      const updatePromises = chapters.map((chapter: any) => {
-        // Gọi tới Proxy Route: /api/chapters/[id]
-        return fetch(`/api/chapters/${chapter.id}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            title: chapter.title,
-            content: chapter.content,
+      const updatePromises: Promise<Response>[] = [];
+      const newChapters: any[] = [];
+
+      // ✅ Debug
+      console.log("actualBookId:", actualBookId);
+      console.log("all chapters:", chapters);
+
+      chapters.forEach((chapter: any) => {
+        if (chapter.id) {
+          // Chapter đã có trong DB → PATCH
+          updatePromises.push(
+            fetch(`/api/chapters/${chapter.id}`, {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                title: chapter.title,
+                content: chapter.content,
+                chapterNumber: chapter.chapterNumber,
+                description: chapter.description,
+              }),
+            }),
+          );
+        } else {
+          // ✅ Chapter mới chưa có id → cần POST
+          if (!actualBookId) {
+            console.error("❌ actualBookId trống! Không thể lưu chương mới.");
+            return;
+          }
+          newChapters.push({
+            bookId: actualBookId,
+            title: chapter.title || "Chương mới",
+            description: chapter.description || "",
+            content: chapter.content || "",
             chapterNumber: chapter.chapterNumber,
-            description: chapter.description,
-          }),
-        });
+          });
+        }
       });
 
-      await Promise.all(updatePromises);
+      console.log("newChapters cần POST:", newChapters);
+
+      // ✅ POST riêng, không gộp vào Promise.all với PATCH
+      if (newChapters.length > 0) {
+        const postRes = await fetch(`/api/chapters`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ chapters: newChapters }),
+        });
+
+        if (!postRes.ok) {
+          const err = await postRes.text();
+          console.error("❌ POST chapters failed:", err);
+          alert("Lưu chương mới thất bại: " + err);
+          return;
+        }
+        console.log("✅ POST chapters thành công");
+      }
+
+      // PATCH các chương cũ
+      if (updatePromises.length > 0) {
+        const results = await Promise.all(updatePromises);
+        const failed = results.find((r) => !r.ok);
+        if (failed) {
+          console.error("❌ PATCH failed:", await failed.text());
+          alert("Lưu thất bại một số chương!");
+          return;
+        }
+      }
+
       alert("Saved successfully!");
+      await refreshChapters(); // ✅ Reload để chương mới có id từ DB
     } catch (error) {
       console.error("Save failed:", error);
+      alert("Lỗi kết nối khi lưu!");
     } finally {
       setIsSavingAll(false);
     }
   };
-  const handleUploadImage = async () => {};
-  const handleGenerateOutline = async () => {};
   const handleGenerateChapterContent = useCallback(
     async (chapterNumber?: number) => {
-      // 1. Kiểm tra: Nếu có truyền chapterNumber (từ Sidebar) thì lấy số đó.
-      // Nếu không (từ Editor/Header) thì lấy localSelectedNumber hiện tại.
-      const targetNumber = chapterNumber || localSelectedNumber;
-
-      // 2. Tìm đúng data của chương đó để lấy Title/Description gửi cho AI
+      const targetNumber = chapterNumber || selectedChapterNumber;
       const targetChapter = chapters.find(
         (ch: Chapter) => ch.chapterNumber === targetNumber,
       );
 
-      if (!targetChapter || agent.isRunning) return;
+      if (!targetChapter || isRunning) return;
 
       appendMessage(
         new TextMessage({
@@ -270,43 +305,138 @@ const EditPage = () => {
         }),
       );
     },
-    [chapters, localSelectedNumber, agent.isRunning],
+    [chapters, selectedChapterNumber, isRunning],
   );
-  const handleExportPDF = async () => {};
-  const handleExportDoc = async () => {};
-  const handleAddchapter = async () => {};
-  // Dùng isLoading để chặn thay vì agent.state.book
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-screen bg-slate-50">
-        <div className="flex flex-col items-center gap-4">
-          <Loader2 className="animate-spin h-10 w-10 text-purple-600" />
-          <p className="text-slate-500 font-medium animate-pulse">
-            Loading from Database...
-          </p>
-        </div>
-      </div>
-    );
-  }
 
-  return (
-    <div className="h-screen w-full flex flex-col bg-white">
+  useEffect(() => {
+    const checkMobile = () => setisTabletOrMobile(window.innerWidth < 1024);
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
+
+  useEffect(() => {
+    async function restoreData() {
+      if (!id) return;
+
+      if (state.book?.chapters?.length > 0) {
+        setIsLoading(false);
+        return;
+      }
+      setIsLoading(true);
+
+      try {
+        const [bookRes, chaptersRes] = await Promise.all([
+          fetch(`/api/books/${id}`),
+          fetch(`/api/chapters/${id}`),
+        ]);
+
+        if (!bookRes.ok || !chaptersRes.ok) throw new Error("API Error");
+
+        const bookData = await bookRes.json();
+        const chaptersData = await chaptersRes.json();
+
+        console.log("BookData: ", bookData);
+        console.log("ChaoterData: ", chaptersData);
+
+        setActualBookId(bookData.id);
+
+        const sanitizedChapters = chaptersData.map((ch: any) => ({
+          ...ch,
+          description: ch.description ?? "",
+          content: ch.content ?? "",
+        }));
+        setLocalChapters(sanitizedChapters);
+        setState((prevState: any) => ({
+          ...prevState,
+          book: {
+            title: bookData.title,
+            topic: bookData.subtitle || bookData.topic || "",
+            author: bookData.author,
+            chapters: sanitizedChapters,
+          },
+          selectedChapterNumber: 1,
+        }));
+      } catch (error) {
+        console.error("Lỗi khôi phục dữ liệu:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    restoreData();
+  }, [id]);
+
+  useLangGraphInterrupt({
+    enabled: ({ eventValue }) => eventValue?.type === "edit_approval",
+    render: ({ event, resolve }) => {
+      const { chapter, old_text, new_text } = event.value;
+      return (
+        <div className="flex flex-col gap-3 p-4 my-2 border border-purple-200 bg-purple-50/50 rounded-xl shadow-sm text-sm">
+          <p className="font-bold text-purple-800">
+            🤖 AI đề xuất sửa Chương {chapter}:
+          </p>
+          <div className="space-y-2">
+            <div>
+              <span className="text-xs font-semibold text-rose-600 uppercase">
+                Xóa đoạn này:
+              </span>
+              <p className="p-2 mt-1 bg-rose-50/80 text-rose-900 line-through rounded-md border border-rose-100">
+                {old_text}
+              </p>
+            </div>
+            <div>
+              <span className="text-xs font-semibold text-emerald-600 uppercase">
+                Thay bằng đoạn này:
+              </span>
+              <p className="p-2 mt-1 bg-emerald-50/80 text-emerald-900 rounded-md border border-emerald-100">
+                {new_text}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 mt-2">
+            <button
+              onClick={() => resolve("yes")}
+              className="flex-1 flex items-center justify-center gap-1 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+            >
+              <Check size={16} /> Đồng ý
+            </button>
+            <button
+              onClick={() => resolve("no")}
+              className="flex-1 flex items-center justify-center gap-1 py-2 bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 transition-colors"
+            >
+              <X size={16} /> Từ chối
+            </button>
+          </div>
+        </div>
+      );
+    },
+  });
+
+  return isLoading ? (
+    <div className="flex items-center justify-center h-screen bg-sidebar-primary-foreground">
+      <div className="flex flex-col items-center gap-4">
+        <Loader2 className="animate-spin h-10 w-10 text-purple-600" />
+        <p className="text-slate-500 font-medium animate-pulse">
+          Loading from Database...
+        </p>
+      </div>
+    </div>
+  ) : (
+    <div className="h-screen w-full flex flex-col bg-primary-foreground">
       <ResizablePanelGroup orientation="horizontal" className="h-full w-full">
-        {/* --- SIDEBAR CẤP 2 (DESKTOP) --- */}
-        {/* Hiện luôn bên trái để bạn dễ test */}
         {!isFullScreen && !isTabletOrMobile && (
           <>
             <ResizablePanel defaultSize={20}>
               <aside className="h-full border-r border-slate-200 bg-slate-50/30 overflow-hidden">
                 <ChapterSidebar
                   chapters={chapters}
-                  selectedChapterNumber={localSelectedNumber}
+                  selectedChapterNumber={selectedChapterNumber}
                   onSelectChapter={handleSelectChapter}
-                  onReorderChapters={handleReorderChapters}
                   onDeleteChapter={handleDeleteChapter}
                   onGenerateChapterContent={handleGenerateChapterContent}
-                  isGenerating={agent.isRunning}
-                  onAddChapter={() => {}}
+                  isGenerating={isRunning}
+                  onAddChapter={handleAddChapter}
                 />
               </aside>
             </ResizablePanel>
@@ -315,7 +445,7 @@ const EditPage = () => {
         )}
         <ResizablePanel defaultSize={isFullScreen ? 100 : 80}>
           <main className="h-full flex flex-col">
-            <header className="h-14 flex items-center justify-between p-1.25 bg-white border-b">
+            <header className="h-14 flex items-center justify-between p-1.25 bg-primary-foreground border-b">
               <div className="hidden lg:flex items-center gap-4">
                 <Tabs
                   value={mode}
@@ -353,28 +483,25 @@ const EditPage = () => {
                   <ZoomIn className="h-4 w-4" />
                 </Button>
               </div>
-
               <div className=" hidden lg:flex items-center gap-2">
-                {/* Nút AI để viết nội dung chương */}
                 <Button
                   variant="outline"
                   size="sm"
                   className="gap-2 border-purple-200 text-purple-600 hover:bg-purple-50"
-                  disabled={agent.isRunning}
+                  disabled={isRunning}
                   onClick={() => handleGenerateChapterContent()}
                 >
-                  {agent.isRunning ? (
+                  {isRunning ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
                     <Sparkles className="h-4 w-4" />
                   )}
                   AI Write
                 </Button>
-
                 <Button
                   variant="ghost"
                   size="icon"
-                  onClick={() => setIsFullScreen!(!isFullScreen)}
+                  onClick={() => setIsFullScreen(!isFullScreen)}
                 >
                   {isFullScreen ? (
                     <Minimize2 size={18} />
@@ -413,7 +540,6 @@ const EditPage = () => {
                     <DropdownMenuLabel>Editor Settings</DropdownMenuLabel>
                     <DropdownMenuSeparator />
                     <DropdownMenuGroup>
-                      {/* Chế độ xem */}
                       <DropdownMenuItem onClick={() => setMode("edit")}>
                         <Edit3 className="mr-2 h-4 w-4" />{" "}
                         <span>Edit Mode</span>
@@ -436,10 +562,10 @@ const EditPage = () => {
                     <DropdownMenuSeparator />
                     <DropdownMenuGroup>
                       <DropdownMenuItem
-                        disabled={agent.isRunning}
+                        disabled={isRunning}
                         onClick={() => handleGenerateChapterContent()}
                       >
-                        {agent.isRunning ? (
+                        {isRunning ? (
                           <Loader2 className="mr-2 h-4 animate-spin" />
                         ) : (
                           <Sparkles className="mr-2 h-4" />
@@ -447,7 +573,7 @@ const EditPage = () => {
                         <span>AI Generate</span>
                       </DropdownMenuItem>
                       <DropdownMenuItem
-                        onClick={() => setIsFullScreen!(!isFullScreen)}
+                        onClick={() => setIsFullScreen(!isFullScreen)}
                       >
                         {isFullScreen ? (
                           <Minimize2 size={18} />
@@ -480,7 +606,6 @@ const EditPage = () => {
                 </DropdownMenu>
               </div>
             </header>
-            {/**Vung soan thao */}
             <div className="flex-1 relative overflow-hidden bg-white">
               <div
                 className="h-full w-full"
@@ -494,15 +619,14 @@ const EditPage = () => {
                   <ChapterEditTab
                     chapter={currentChapterContent}
                     onContentChange={handleContentChange}
-                    onGenerateChapterContent={handleGenerateChapterContent}
-                    isGenerating={agent.isRunning}
+                    isGenerating={isWritingChapter}
                     isFullScreen={isFullScreen}
                   />
                 ) : (
                   <ChapterViewTab
-                    content={isContent}
+                    content={currentChapterContent?.content}
                     title={
-                      currentChapterContent?.title || "Chương chưa có tiêu đề"
+                      currentChapterContent.title || "Chương chưa có tiêu đề"
                     }
                   />
                 )}
@@ -511,7 +635,6 @@ const EditPage = () => {
           </main>
         </ResizablePanel>
       </ResizablePanelGroup>
-      {/* --- SIDEBAR CẤP 2 (MOBILE DRAWER) --- */}
       {isOpenSideBar && isTabletOrMobile && (
         <div className="fixed inset-0 z-100 lg:hidden">
           <div
@@ -529,16 +652,16 @@ const EditPage = () => {
                 <X size={20} />
               </Button>
             </div>
+
             <div className="flex-1 overflow-y-auto w-full">
               <ChapterSidebar
                 chapters={chapters}
-                selectedChapterNumber={localSelectedNumber}
+                selectedChapterNumber={selectedChapterNumber}
                 onSelectChapter={handleSelectChapter}
-                onReorderChapters={handleReorderChapters}
                 onDeleteChapter={handleDeleteChapter}
                 onGenerateChapterContent={handleGenerateChapterContent}
-                isGenerating={agent.isRunning}
-                onAddChapter={() => {}}
+                isGenerating={isRunning}
+                onAddChapter={handleAddChapter}
               />
             </div>
           </div>

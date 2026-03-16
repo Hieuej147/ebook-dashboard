@@ -1,44 +1,37 @@
-import { fetchWithAuth } from "@/lib/dal";
+// app/api/books/route.ts
+import axiosServer from "@/lib/axios-server";
+import { handleApiError } from "@/lib/api-error";
 import { NextResponse } from "next/server";
-
-export async function GET(req: Request) {
-  const { searchParams } = new URL(req.url);
-
-  // Next.js gọi NestJS giúp bạn
-  const response = await fetchWithAuth(
-    `/books/admin/all?${searchParams.toString()}`,
-  );
-  const data = await response.json();
-
-  if (!response.ok) {
-    return NextResponse.json(
-      { message: data.message || "Error to take all books" },
-      { status: response.status },
-    );
-  }
-
-  return NextResponse.json(data);
-}
+import { getSession } from "@/lib/session";
+import { createBookApiSchema } from "@/lib/zod";
 
 export async function POST(req: Request) {
- 
-    const body = await req.json();
-
-    const res = await fetchWithAuth("/books", {
-      headers: { "Content-Type": "application/json" },
-      method: "POST",
-      body: JSON.stringify(body),
-    });
-
-    const data = await res.json();
-
-     if (!res.ok) {
-    return NextResponse.json(
-      { message: data.message || "Error to take all books" },
-      { status: res.status },
-    );
+  const session = await getSession();
+  if (!session) {
+    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
   }
 
-    return NextResponse.json(data);
- 
+  try {
+    const body = await req.json();
+    const result = createBookApiSchema.safeParse(body);
+    if (!result.success) {
+      return NextResponse.json(
+        {
+          message: "Invalid input",
+          errors: result.error.flatten().fieldErrors,
+        },
+        { status: 400 },
+      );
+    }
+
+    // 1. Không cần JSON.stringify
+    // 2. Không cần headers thủ công
+    // 3. Không cần check res.ok
+    const res = await axiosServer.post("/books", body);
+
+    return NextResponse.json(res.data);
+  } catch (error) {
+    // Dùng luôn helper "thần thánh" của Hiếu
+    return handleApiError(error, "Không thể tạo sách mới");
+  }
 }

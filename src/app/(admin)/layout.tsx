@@ -1,12 +1,8 @@
 // app/admin/layout.tsx
-import { Button } from "@/components/ui/button";
-import Navbar from "@/components/Navbar";
-import AppSidebar from "@/components/AppSidebar";
-import { SidebarProvider } from "@/components/ui/sidebar";
+
 import { cookies } from "next/headers";
-import { CopilotPopup, CopilotSidebar } from "@copilotkit/react-ui";
-import { Toaster } from "@/components/ui/sonner";
-import { EBookLayout } from "@/components/eNavigationLayout";
+import { EBookLayout } from "@/components/layout/DashboardLayout";
+import { getSession } from "@/lib/session";
 
 export default async function AdminLayout({
   children,
@@ -15,6 +11,11 @@ export default async function AdminLayout({
 }) {
   const cookieStore = await cookies();
   const defaultOpen = cookieStore.get("sidebar_state")?.value === "true";
+  const session = await getSession();
 
-  return <EBookLayout defaultOpen={defaultOpen}>{children}</EBookLayout>;
+  return (
+    <>
+      <EBookLayout defaultOpen={defaultOpen}>{children}</EBookLayout>
+    </>
+  );
 }

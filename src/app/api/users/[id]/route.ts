@@ -1,69 +1,73 @@
-import { fetchWithAuth } from "@/lib/dal";
+import axiosServer from "@/lib/axios-server";
+import { handleApiError } from "@/lib/api-error";
 import { NextResponse } from "next/server";
+import { getSession } from "@/lib/session";
+import { updateUserApiSchema } from "@/lib/zod";
 
 export async function GET(
-  request: Request,
+  _request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const { id } = await params;
-
-  const response = await fetchWithAuth(`/users/${id}`, {
-    method: "GET",
-    cache: "no-cache",
-  });
-  const data = await response.json();
-  if (!response.ok) {
-    return NextResponse.json(
-      { message: data.message || "Error to take all books" },
-      { status: response.status },
-    );
+  const session = await getSession();
+  if (!session) {
+    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
   }
-
-  return NextResponse.json(data);
+  const { id } = await params;
+  try {
+    const res = await axiosServer.get(`/users/${id}`);
+    return NextResponse.json(res.data);
+  } catch (error) {
+    return handleApiError(error, "Không thể lấy thông tin người dùng");
+  }
 }
 
 export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const { id } = await params;
-  const body = await request.json();
-
-  const response = await fetchWithAuth(`/users/${id}`, {
-    headers: { "Content-Type": "application/json" },
-    method: "PATCH",
-    body: JSON.stringify(body),
-  });
-
-  const data = await response.json();
-  console.log("Dữ liệu NestJS trả về sau PATCH:", data); // <--- Soi kỹ ở đây
-
-  if (!response.ok) {
-    return NextResponse.json(
-      { message: data.message || "Error to take all books" },
-      { status: response.status },
-    );
+  const session = await getSession();
+  if (!session) {
+    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
   }
 
-  return NextResponse.json(data);
+  const { id } = await params;
+
+  try {
+    const body = await request.json();
+
+    // ✅ Validate
+    const result = updateUserApiSchema.safeParse(body);
+    if (!result.success) {
+      return NextResponse.json(
+        {
+          message: "Invalid input",
+          errors: result.error.flatten().fieldErrors,
+        },
+        { status: 400 },
+      );
+    }
+
+    const res = await axiosServer.patch(`/users/${id}`, result.data);
+    return NextResponse.json(res.data);
+  } catch (error) {
+    return handleApiError(error, "Cập nhật người dùng thất bại");
+  }
 }
 
 export async function DELETE(
-  request: Request,
+  _request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const { id } = await params;
-
-  const response = await fetchWithAuth(`/users/${id}`, {
-    method: "DELETE",
-  });
-
-  if (!response.ok) {
-    return NextResponse.json(
-      { error: "Delete Failed" },
-      { status: response.status },
-    );
+  const session = await getSession();
+  if (!session) {
+    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
   }
 
-  return NextResponse.json({ message: "Delete success" });
+  const { id } = await params;
+  try {
+    const res = await axiosServer.delete(`/users/${id}`);
+    return NextResponse.json(res.data || { message: "Xóa thành công" });
+  } catch (error) {
+    return handleApiError(error, "Xóa người dùng thất bại");
+  }
 }

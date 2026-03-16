@@ -1,22 +1,21 @@
 // app/api/category/list/route.ts
-import { fetchWithAuth } from "@/lib/dal";
+import axiosServer from "@/lib/axios-server";
+import { handleApiError } from "@/lib/api-error";
 import { NextResponse } from "next/server";
+import { getSession } from "@/lib/session";
 
 export async function GET() {
-  // Gọi thẳng đến endpoint "all/list" mà mình vừa tạo ở NestJS
-  const response = await fetchWithAuth("/category/all/list", {
-    method: "GET",
-    headers: { "Content-Type": "application/json" },
-  });
-
-  const data = await response.json();
-
-  if (!response.ok) {
-    return NextResponse.json(
-      { message: data.message || "Lỗi khi lấy danh sách rút gọn" },
-      { status: response.status }
-    );
+  const session = await getSession();
+  if (!session) {
+    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
   }
+  try {
+    // Gọi thẳng đến NestJS. Interceptor tự đính Token và tự parse JSON.
+    const res = await axiosServer.get("/category/all/list");
 
-  return NextResponse.json(data);
+    return NextResponse.json(res.data);
+  } catch (error) {
+    // Helper của Hiếu sẽ hốt gọn mọi lỗi 400, 401, 500 từ NestJS
+    return handleApiError(error, "Không thể lấy danh sách danh mục");
+  }
 }

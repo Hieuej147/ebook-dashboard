@@ -1,24 +1,58 @@
 "use client";
-import React, { createContext, useContext } from "react";
-import { BookState } from "@/lib/type";
-import { useAgent } from "@copilotkit/react-core/v2";
+import React, { createContext, useContext, memo } from "react";
+import { useCoAgent } from "@copilotkit/react-core";
+import { AgentState } from "@/lib/types";
 
-// Định nghĩa kiểu dữ liệu cho Context
+interface AgentContextType {
+  state: AgentState;
+  setState: (
+    newState: AgentState | ((prevState: AgentState | undefined) => AgentState),
+  ) => void;
+  running: boolean;
+  nodeName: string | undefined;
+}
 
-const AgentContext = createContext<any>(null);
+const AgentContext = createContext<AgentContextType | undefined>(undefined);
 
-export const AgentProvider = ({ children }: { children: React.ReactNode }) => {
-  // Khai báo useCoAgent duy nhất tại đây cho toàn bộ FE
-  const { agent } = useAgent();
+export const AgentProvider = memo(
+  ({ children }: { children: React.ReactNode }) => {
+    const {
+      state: coAgentState,
+      setState: setCoAgentState,
+      running,
+      nodeName: NodeName,
+    } = useCoAgent<AgentState>({
+      name: "default",
+      initialState: {
+        book: { title: "", topic: "", writingStyle: "", chapters: [] },
+        sources: {},
+        selectedChapterNumber: 1,
+        logs: [],
+      },
+    });
 
-  return (
-    <AgentContext.Provider value={agent}>{children}</AgentContext.Provider>
-  );
-};
+    // ✅ Dùng useMemo để value không tạo object mới mỗi render
+    const value = React.useMemo(
+      () => ({
+        state: coAgentState,
+        setState: setCoAgentState,
+        running,
+        nodeName: NodeName,
+      }),
+      [coAgentState, setCoAgentState, running, NodeName],
+    );
 
-// Hook để các component con lấy dữ liệu dễ dàng
+    return (
+      <AgentContext.Provider value={value}>{children}</AgentContext.Provider>
+    );
+  },
+);
+
+AgentProvider.displayName = "AgentProvider";
+
 export const useLangChainAgent = () => {
   const context = useContext(AgentContext);
-  if (!context) throw new Error("useAgent must be used within AgentProvider");
+  if (!context)
+    throw new Error("useLangChainAgent must be used within AgentProvider");
   return context;
 };

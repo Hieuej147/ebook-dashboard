@@ -38,7 +38,20 @@ export const formSchema = z.object({
   customerType: z.enum(["NORMAL", "PREMIUM"]),
   createdAt: z.string().datetime(),
 });
+export const updateUserApiSchema = z.object({
+  firstName: z.string().min(1).max(50).optional(),
+  lastName: z.string().min(1).max(50).optional(),
+  email: z.string().email().optional(),
+  role: z.enum(["ADMIN", "USER"]).optional(),
+  customerType: z.enum(["NORMAL", "PREMIUM"]).optional(),
+});
 
+export const updateChapterApiSchema = z.object({
+  title: z.string().min(1).max(255).optional(),
+  description: z.string().optional().nullable(),
+  content: z.string().optional(),
+  chapterNumber: z.number().int().positive().optional(),
+});
 export const BookSchema = z.object({
   id: z.string().readonly(), // Không cho phép ghi đè mức Type
   categoryId: z.string().min(1, "Danh mục là bắt buộc"),
@@ -57,6 +70,39 @@ export const BookSchema = z.object({
   // Các trường thời gian
   createdAt: z.string().datetime().readonly(),
   updatedAt: z.string().datetime().readonly(),
+});
+
+export const createBookApiSchema = z.object({
+  title: z.string().min(1, "Title is required").max(255),
+  subtitle: z.string().optional().nullable(),
+  author: z.string().min(1, "Author is required").max(255),
+  description: z.string().optional().nullable(),
+  price: z.number().nonnegative("Price must be >= 0"),
+  stock: z.number().int().nonnegative("Stock must be >= 0"),
+  sku: z.string().min(1, "SKU is required"),
+  categoryId: z.string().uuid("Invalid category ID"),
+  isActive: z.boolean().optional().default(true),
+  status: z.enum(["DRAFT", "PUBLISHED"]).optional().default("DRAFT"),
+});
+
+export const createCategoryApiSchema = z.object({
+  name: z.string().min(1, "Name is required").max(100),
+  description: z.string().optional().nullable(),
+  isActive: z.boolean().optional().default(true),
+});
+
+export const createChapterApiSchema = z.object({
+  bookId: z.string().uuid("Invalid book ID"),
+  title: z.string().min(1, "Title is required").max(255),
+  description: z.string().optional().nullable(),
+  content: z.string().optional().default(""),
+  chapterNumber: z.number().int().positive(),
+});
+
+export const createChaptersApiSchema = z.object({
+  chapters: z
+    .array(createChapterApiSchema)
+    .min(1, "At least one chapter required"),
 });
 
 export type TSignupSchema = z.infer<typeof signupSchema>;

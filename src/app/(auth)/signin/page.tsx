@@ -66,7 +66,6 @@ export default function Login() {
         <CardContent className="px-6 pb-6">
           {/* LỖI TỪ SERVER (Dữ liệu không khớp) */}
           <div className="h-14">
-            {" "}
             {/* Giữ chiều cao cố định cho vùng thông báo lỗi server */}
             {state?.message && (
               <div className="p-3 bg-destructive/10 border border-destructive/20 text-destructive rounded-md flex items-center gap-2 text-sm">
@@ -96,7 +95,7 @@ export default function Login() {
                   type="email"
                   placeholder="Enter your email"
                   className={cn(
-                    "pl-11 h-12 transition-all",
+                    "pl-11 h-12 focus-visible:ring-purple-500",
                     errors.email
                       ? "border-destructive focus-visible:ring-destructive"
                       : "",
@@ -138,7 +137,7 @@ export default function Login() {
                   type={showPassword ? "text" : "password"}
                   placeholder="Enter your password"
                   className={cn(
-                    "pl-11 pr-11 h-12 transition-all",
+                    "pl-11 h-12 focus-visible:ring-purple-500",
                     errors.password
                       ? "border-destructive focus-visible:ring-destructive"
                       : "",
@@ -190,7 +189,7 @@ export default function Login() {
               </div>
               <button
                 type="button"
-                className="text-sm font-medium hover:underline text-primary"
+                className="text-sm font-medium hover:underline text-purple-600"
               >
                 Forgot password?
               </button>
@@ -199,7 +198,7 @@ export default function Login() {
             <Button
               disabled={isPending}
               type="submit"
-              className="w-full h-12 text-base font-semibold transition-all active:scale-[0.98]"
+              className="w-full h-12 text-base font-semibold bg-purple-600 hover:bg-purple-700 text-white"
             >
               {isPending ? (
                 <div className="flex items-center gap-2">
@@ -218,7 +217,7 @@ export default function Login() {
               <button
                 type="button"
                 onClick={() => router.push("/signup")}
-                className="text-foreground font-bold hover:underline"
+                className="text-purple-600 font-bold hover:underline"
               >
                 Sign up
               </button>

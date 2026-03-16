@@ -1,5 +1,4 @@
-import BookDetail from "@/components/BookDetail";
-import { fetchWithAuth } from "@/lib/dal";
+import BookDetail from "@/components/books/BookDetail";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -8,13 +7,11 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-import { Check, Settings } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import Link from "next/link";
-import BookClubCard from "@/components/BookClubCard";
-import AuthorBookCard from "@/components/AuthorBookCard";
-import PromoBanner from "@/components/PromoBanner";
+import AuthorBookCard from "@/components/books/AuthorBookCard";
+import PromoBanner from "@/components/books/PromoBanner";
 import { notFound } from "next/navigation";
+import axiosServer from "@/lib/axios-server";
+import BookClubCard from "@/components/books/BookClubCard";
 
 const BookDetailPage = async ({
   params,
@@ -22,24 +19,26 @@ const BookDetailPage = async ({
   params: Promise<{ id: string }>;
 }) => {
   const { id } = await params;
+  let bookData;
 
-  // GỌI API TRỰC TIẾP TẠI ĐÂY
-  const res = await fetchWithAuth(`/books/${id}`, {
-    method: "GET",
-    next: { revalidate: 60 }, // Cache dữ liệu trong 60s
-  });
+  try {
+    // Axios tự lấy Token từ Cookie nhờ Interceptor chúng ta đã viết
+    const res = await axiosServer.get(`/books/${id}`);
+    bookData = res.data;
+  } catch (error: any) {
+    // Nếu NestJS báo 404, quăng ra trang 404 của Next.js ngay
+    if (error.response?.status === 404) {
+      notFound();
+    }
 
-  if (!res.ok) {
-    if (res.status === 404) notFound(); // Trả về trang 404 nếu không thấy sách
+    // Các lỗi khác thì báo lỗi hệ thống
     return (
-      <div className="p-10 text-rose-500">
-        Lỗi: Không thể lấy dữ liệu từ server
+      <div className="p-10 text-rose-500 font-semibold bg-rose-50 rounded-xl m-4">
+        ❌ Lỗi: Không thể kết nối với máy chủ (Code:{" "}
+        {error.response?.status || "500"})
       </div>
     );
   }
-
-  const bookData = await res.json();
-  console.log(bookData);
   return (
     <>
       <div>

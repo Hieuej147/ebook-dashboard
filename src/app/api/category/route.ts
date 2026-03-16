@@ -1,43 +1,33 @@
-import { fetchWithAuth } from "@/lib/dal";
+import axiosServer from "@/lib/axios-server";
+import { handleApiError } from "@/lib/api-error";
 import { NextResponse } from "next/server";
+import { getSession } from "@/lib/session";
+import { createCategoryApiSchema } from "@/lib/zod";
 
-export async function GET(req: Request) {
-  const { searchParams } = new URL(req.url);
-  const queryString = searchParams.toString();
-  // Next.js gọi NestJS giúp bạn
-  const response = await fetchWithAuth(
-    `/category${queryString ? `?${queryString}` : ""}`,
-    {
-      method: "GET",
-      headers: { "Content-Type": "application/json" },
-    },
-  );
-  const data = await response.json();
-  if (!response.ok) {
-    return NextResponse.json(
-      { message: data.message || "Lỗi khi lấy danh sách Category" },
-      { status: response.status },
-    );
+export async function POST(req: Request) {
+  const session = await getSession();
+  if (!session) {
+    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
   }
 
-  return NextResponse.json(data);
+  try {
+    const body = await req.json();
+
+    const result = createCategoryApiSchema.safeParse(body);
+    if (!result.success) {
+      return NextResponse.json(
+        {
+          message: "Invalid input",
+          errors: result.error.flatten().fieldErrors,
+        },
+        { status: 400 },
+      );
+    }
+
+    // ✅ dùng result.data thay vì body
+    const res = await axiosServer.post("/category", result.data);
+    return NextResponse.json(res.data);
+  } catch (error) {
+    return handleApiError(error, "Không thể tạo danh mục mới");
+  }
 }
-
-// export async function POST(req: Request) {
-//   const body = await req.json();
-
-//   const res = await fetchWithAuth("/books", {
-//     headers: { "Content-Type": "application/json" },
-//     method: "POST",
-//     body: JSON.stringify(body),
-//   });
-
-//   const data = await res.json();
-//   if (!res.ok) {
-//     return NextResponse.json(
-//       { message: data.message || "Error to take all books" },
-//       { status: res.status },
-//     );
-//   }
-//   return NextResponse.json(data);
-// }

@@ -1,59 +1,61 @@
-import { fetchWithAuth } from "@/lib/dal";
+// app/api/chapters/[id]/route.ts
+import axiosServer from "@/lib/axios-server";
+import { handleApiError } from "@/lib/api-error";
 import { NextResponse } from "next/server";
+import { getSession } from "@/lib/session";
+import { updateChapterApiSchema } from "@/lib/zod";
 
 export async function GET(
-  req: Request,
+  _req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  const session = await getSession();
+  if (!session) {
+    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+  }
   const { id } = await params;
+
   try {
-    const res = await fetchWithAuth(`/chapters/by-book/${id}`, {
-      headers: { "Content-Type": "application/json" },
-      method: "GET",
-    });
+    // Axios tự parse JSON, Hiếu chỉ việc lấy .data
+    // Lưu ý: Endpoint là /chapters/by-book/${id} như Hiếu viết cũ
+    const res = await axiosServer.get(`/chapters/by-book/${id}`);
 
-    if (!res.ok) {
-      return NextResponse.json({ error: "Failed" }, { status: res.status });
-    }
-
-    const data = await res.json();
-    return NextResponse.json(data);
+    return NextResponse.json(res.data);
   } catch (error) {
-    return NextResponse.json(
-      { message: "Internal Server Error" },
-      { status: 500 },
-    );
+    return handleApiError(error, "Không thể lấy danh sách chương");
   }
 }
+
 export async function PATCH(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  const session = await getSession();
+  if (!session) {
+    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+  }
+  const { id } = await params;
+
   try {
-    // 1. Lấy ID từ URL (Next.js 15 yêu cầu await params)
-    const { id } = await params;
     const body = await req.json();
 
-    // 2. Chuyển tiếp request sang NestJS endpoint: PATCH /chapters/{id}
-    const res = await fetchWithAuth(`/chapters/${id}`, {
-      headers: { "Content-Type": "application/json" },
-      method: "PATCH",
-      body: JSON.stringify(body),
-    });
-
-    const data = await res.json();
-
-    // 3. Trả về lỗi nếu backend NestJS báo lỗi
-    if (!res.ok) {
-      return NextResponse.json(data, { status: res.status });
+    const result = updateChapterApiSchema.safeParse(body);
+    if (!result.success) {
+      return NextResponse.json(
+        {
+          message: "Invalid input",
+          errors: result.error.flatten().fieldErrors,
+        },
+        { status: 400 },
+      );
     }
 
-    return NextResponse.json(data);
+    const res = await axiosServer.patch(`/chapters/${id}`, result.data);
+
+    // Axios tự đính Token và tự JSON.stringify body
+
+    return NextResponse.json(res.data);
   } catch (error) {
-    console.error("PATCH Chapter Error:", error);
-    return NextResponse.json(
-      { message: "Internal Server Error" },
-      { status: 500 },
-    );
+    return handleApiError(error, "Cập nhật chương thất bại");
   }
 }

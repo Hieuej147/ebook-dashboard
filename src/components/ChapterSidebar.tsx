@@ -1,7 +1,14 @@
-import { ChevronLeft, GripVertical, Plus, Trash2, Wand2 } from "lucide-react";
+import {
+  ChevronLeft,
+  GripVertical,
+  Loader2,
+  Plus,
+  Trash2,
+  Wand2,
+} from "lucide-react";
 import { Button } from "./ui/button";
 import { ScrollArea } from "./ui/scroll-area";
-import { Chapter } from "@/lib/type";
+import { Chapter } from "@/lib/types";
 import { useRouter } from "next/navigation";
 
 import {
@@ -124,7 +131,6 @@ interface ChapterSidebarProps {
   chapters: Chapter[];
   selectedChapterNumber: number;
   onSelectChapter: (index: number) => void;
-  onReorderChapters: (oldIndex: number, newIndex: number) => void;
   onDeleteChapter: (index: number) => void;
   onGenerateChapterContent: (index: number) => Promise<void>;
   onAddChapter: () => void;
@@ -136,7 +142,6 @@ const ChapterSidebar = memo(
     chapters,
     selectedChapterNumber,
     onSelectChapter,
-    onReorderChapters,
     onDeleteChapter,
     onAddChapter,
     onGenerateChapterContent,
@@ -150,7 +155,11 @@ const ChapterSidebar = memo(
     );
     const [localOrder, setLocalOrder] = useState(chapters);
     useEffect(() => {
-      setLocalOrder(chapters);
+      // Ép kiểu sắp xếp tăng dần theo đúng chapterNumber mỗi khi load lại sách
+      const sortedChapters = [...chapters].sort(
+        (a, b) => a.chapterNumber - b.chapterNumber,
+      );
+      setLocalOrder(sortedChapters);
     }, [chapters]);
 
     const handleDragEnd = (event: DragEndEvent) => {
@@ -163,15 +172,15 @@ const ChapterSidebar = memo(
           (c) => c.chapterNumber === over.id,
         );
 
-        // CHỈ THAY ĐỔI Ở ĐÂY: Update local state, không gọi props.onReorderChapters
+        // Chỉ thay đổi trên giao diện tạm thời (Local State)
         const updatedOrder = arrayMove(localOrder, oldIndex, newIndex);
         setLocalOrder(updatedOrder);
       }
     };
 
     return (
-      <aside className="h-full flex flex-col bg-white overflow-hidden">
-        <div className="p-2.25 border-b flex items-center gap-2 shrink-0 bg-white">
+      <aside className="h-full flex flex-col bg-primary-foreground overflow-hidden">
+        <div className="p-2.25 border-b flex items-center gap-2 shrink-0 bg-primary-foreground">
           <Button
             variant="ghost"
             size="icon"
@@ -214,10 +223,19 @@ const ChapterSidebar = memo(
           <Button
             variant="secondary"
             onClick={onAddChapter}
+            disabled={isGenerating}
             className="w-full flex items-center gap-2"
           >
-            <Plus className="h-4 w-4" />
-            New Chapter
+            {isGenerating ? (
+              <Loader2 className="h-4 w-4 animate-spin text-purple-600" />
+            ) : (
+              <Plus className="h-4 w-4" />
+            )}
+            <span
+              className={isGenerating ? "text-purple-600 font-semibold" : ""}
+            >
+              {isGenerating ? "Generating new chapter..." : "New Chapter"}
+            </span>
           </Button>
         </div>
       </aside>

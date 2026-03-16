@@ -1,5 +1,5 @@
 "use client";
-import Todolist from "@/components/Todolist";
+import Todolist from "@/components/dashboard/Todolist";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -15,13 +15,13 @@ import {
 } from "@/components/ui/hover-card";
 import { BadgeCheck, Candy, Citrus, Shield } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ChartArea } from "@/components/ChartArea";
-import UserInfoCard from "@/components/UserInfoCard";
+import { ChartArea } from "@/components/dashboard/ChartArea";
+import UserInfoCard from "@/components/users/UserInfoCard";
 import { useParams } from "next/navigation";
 import { use, useEffect, useState } from "react";
 import { User } from "../columns";
 import { TableSkeleton } from "@/components/TableSkeleton";
-import UserOrdersCard from "@/components/UserOrdersCard";
+import UserOrdersCard from "@/components/orders/UserOrdersCard";
 const UserDetailPage = ({ params }: { params: Promise<{ id: string }> }) => {
   const { id } = useParams();
   const [user, setUser] = useState<User | null>(null);
