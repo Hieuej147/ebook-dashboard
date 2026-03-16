@@ -4,6 +4,7 @@ import { encrypt, getSession } from "./lib/session";
 import { decodeJwtExpiry } from "./lib/token";
 import arcjet, { shield, fixedWindow, detectBot } from "@arcjet/next";
 
+
 const publicRoutes = ["/signin", "/signup"];
 
 // ✅ Rule chung cho toàn app
@@ -35,6 +36,9 @@ const authAj = arcjet({
 
 export default async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
+  if (pathname === "/unauthorized") {
+    return NextResponse.next();
+  }
 
   // ✅ Arcjet check — chạy TRƯỚC mọi logic khác
   const isAuthRoute =
@@ -68,11 +72,22 @@ export default async function proxy(req: NextRequest) {
   const isRootRoute = pathname === "/";
 
   if (isRootRoute && session) {
+    if ((session.user.role as unknown) !== "ADMIN") {
+      return NextResponse.redirect(new URL("/unauthorized", req.url));
+    }
     return NextResponse.redirect(new URL("/dashboard", req.url));
   }
 
   if (isProtectedRoute && !session) {
     return NextResponse.redirect(new URL("/signin", req.url));
+  }
+
+  if (
+    isProtectedRoute &&
+    session &&
+    (session.user.role as unknown) !== "ADMIN"
+  ) {
+    return NextResponse.redirect(new URL("/unauthorized", req.url));
   }
 
   if (isPublicRoute && session) {

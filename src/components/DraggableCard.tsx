@@ -6,9 +6,11 @@ import { GripVertical } from "lucide-react";
 export function DraggableCard({
   id,
   children,
+  disabled,
 }: {
   id: string;
   children: React.ReactNode;
+  disabled?: boolean;
 }) {
   const {
     attributes,
@@ -17,7 +19,7 @@ export function DraggableCard({
     transform,
     transition,
     isDragging,
-  } = useSortable({ id });
+  } = useSortable({ id, disabled });
 
   return (
     <div

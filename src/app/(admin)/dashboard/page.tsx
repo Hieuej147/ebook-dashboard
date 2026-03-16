@@ -3,7 +3,7 @@ import CardBooks from "@/components/books/CardBooks";
 import { StatCard } from "@/components/dashboard/StatCard";
 import Todolist from "@/components/dashboard/Todolist";
 import CardRecentActivity from "@/components/dashboard/CardRecentActivity";
-import { useCallback, useEffect, useMemo, useState } from "react"; // ✅ thêm useEffect
+import { useCallback, useEffect, useState } from "react";
 import {
   DndContext,
   closestCenter,
@@ -48,26 +48,26 @@ const DEFAULT_CHARTS: Charts = {
   books_chart: [30, 50, 25, 60, 40].map((v) => ({ date: "", value: v })),
 };
 
+// ✅ CARD_MAP ngoài component — không bao giờ re-create
+const CARD_MAP: Record<string, React.ReactNode> = {
+  "card-books": <CardBooks />,
+  "card-orders": <CardOrder />,
+  "card-quickstats": <CardQuickStats />,
+  "card-todo": <Todolist />,
+  "card-activity": <CardRecentActivity />,
+};
+
+const LEFT_CARDS = new Set(["card-books", "card-todo"]);
+
 export default function DashboardPage() {
   const [stats, setStats] = useState(DEFAULT_STATS);
   const [charts, setCharts] = useState<Charts>(DEFAULT_CHARTS);
   const [cardOrder, setCardOrder] = useState(DEFAULT_ORDER);
-  const [mounted, setMounted] = useState(false); 
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setMounted(true);
   }, []);
-
-  const CARD_MAP = useMemo<Record<string, React.ReactNode>>(
-    () => ({
-      "card-books": <CardBooks />,
-      "card-orders": <CardOrder />,
-      "card-quickstats": <CardQuickStats />,
-      "card-todo": <Todolist />,
-      "card-activity": <CardRecentActivity />,
-    }),
-    [],
-  );
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -104,7 +104,6 @@ export default function DashboardPage() {
     });
   });
 
-  const LEFT_CARDS = new Set(["card-books", "card-todo"]);
   const leftCards = cardOrder.filter((id) => LEFT_CARDS.has(id));
   const rightCards = cardOrder.filter((id) => !LEFT_CARDS.has(id));
 
@@ -167,50 +166,34 @@ export default function DashboardPage() {
 
         {/* Draggable Cards */}
         <div className="bg-primary-foreground p-4 rounded-lg col-span-1 lg:col-span-2 2xl:col-span-4">
-          {!mounted ? (
-            // ✅ SSR — render cards bình thường không có DnD
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              <div className="flex flex-col gap-4">
-                {leftCards.map((id) => (
-                  <div key={id}>{CARD_MAP[id]}</div>
-                ))}
-              </div>
-              <div className="flex flex-col gap-4">
-                {rightCards.map((id) => (
-                  <div key={id}>{CARD_MAP[id]}</div>
-                ))}
-              </div>
-            </div>
-          ) : (
-            // ✅ Client only — có DnD
-            <DndContext
-              sensors={sensors}
-              collisionDetection={closestCenter}
-              onDragEnd={handleDragEnd}
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+          >
+            <SortableContext
+              items={cardOrder}
+              strategy={verticalListSortingStrategy}
             >
-              <SortableContext
-                items={cardOrder}
-                strategy={verticalListSortingStrategy}
-              >
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                  <div className="flex flex-col gap-4">
-                    {leftCards.map((id) => (
-                      <DraggableCard key={id} id={id}>
-                        {CARD_MAP[id]}
-                      </DraggableCard>
-                    ))}
-                  </div>
-                  <div className="flex flex-col gap-4">
-                    {rightCards.map((id) => (
-                      <DraggableCard key={id} id={id}>
-                        {CARD_MAP[id]}
-                      </DraggableCard>
-                    ))}
-                  </div>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <div className="flex flex-col gap-4">
+                  {leftCards.map((id) => (
+                    // ✅ disabled khi chưa mounted — không unmount/remount
+                    <DraggableCard key={id} id={id} disabled={!mounted}>
+                      {CARD_MAP[id]}
+                    </DraggableCard>
+                  ))}
                 </div>
-              </SortableContext>
-            </DndContext>
-          )}
+                <div className="flex flex-col gap-4">
+                  {rightCards.map((id) => (
+                    <DraggableCard key={id} id={id} disabled={!mounted}>
+                      {CARD_MAP[id]}
+                    </DraggableCard>
+                  ))}
+                </div>
+              </div>
+            </SortableContext>
+          </DndContext>
         </div>
       </div>
     </>
