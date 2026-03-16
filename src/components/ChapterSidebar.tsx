@@ -9,7 +9,6 @@ import {
 import { Button } from "./ui/button";
 import { ScrollArea } from "./ui/scroll-area";
 import { Chapter } from "@/lib/types";
-import { useRouter } from "next/navigation";
 
 import {
   DndContext,

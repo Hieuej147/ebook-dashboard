@@ -1,5 +1,4 @@
 "use client";
-import Todolist from "@/components/dashboard/Todolist";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -18,7 +17,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ChartArea } from "@/components/dashboard/ChartArea";
 import UserInfoCard from "@/components/users/UserInfoCard";
 import { useParams } from "next/navigation";
-import { use, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { User } from "../columns";
 import { TableSkeleton } from "@/components/TableSkeleton";
 import UserOrdersCard from "@/components/orders/UserOrdersCard";

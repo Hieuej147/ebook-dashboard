@@ -1,44 +1,14 @@
 "use client";
 
-import { useState, useEffect, useTransition, useCallback } from "react";
-import {
-  Search,
-  Eye,
-  MoreVertical,
-  Package,
-  Truck,
-  CheckCircle,
-  XCircle,
-} from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { useState, useTransition, useCallback } from "react";
 import {
   Table,
   TableBody,
-  TableCell,
   TableHead,
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
 import { OrderTableCell } from "@/components/orders/OrderTableCell";
-import { getAllOrders } from "@/lib/dal";
-import {
-  Pagination,
-  PaginationContent,
-  PaginationEllipsis,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-} from "@/components/ui/pagination";
 // Component màu sắc trạng thái dựa trên OrderStatus của Prisma
 import { OrderDetailDialog } from "@/components/orders/OrderDetailDialog";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";

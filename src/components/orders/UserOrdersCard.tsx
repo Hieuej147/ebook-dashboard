@@ -1,12 +1,11 @@
 "use client";
-
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { ShoppingBag, CalendarIcon, ChevronLeft, Eye } from "lucide-react";
 import { format } from "date-fns";
-import { Button } from "./ui/button";
+import { Button } from "@/components/ui/button";
 import OrderDetailCard from "./OrderItemCard";
 
 interface UserOrdersCardProps {
