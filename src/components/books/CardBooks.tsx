@@ -6,13 +6,14 @@ import { ScrollArea } from "../ui/scroll-area";
 import DialogBook from "./DialogBook";
 import { useBookFiltersTool_HumanLoop } from "../action-ai/useBookFiltersTool";
 import { Loader2 } from "lucide-react";
+import { EditBookID } from "../SheetEdit";
 
 type Book = {
   id: string;
   title: string;
   author: string;
   status: "DRAFT" | "PUBLISHED";
-  coverImage?: string;
+  imageUrl?: string;
 };
 
 type Filters = {
@@ -22,6 +23,9 @@ type Filters = {
 };
 
 export default function CardBooks() {
+  const [editId, setEditId] = useState<string | null>(null);
+  const [editOpen, setEditOpen] = useState(false);
+  const [categories, setCategories] = useState([]);
   const [books, setBooks] = useState<Book[]>([]);
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState<Filters>({
@@ -50,6 +54,15 @@ export default function CardBooks() {
   }, []);
 
   useEffect(() => {
+    fetch("/api/category/list")
+      .then((r) => r.json())
+      .then((d) => {
+        const list = Array.isArray(d) ? d : d.data || [];
+        setCategories(list); // ✅ {id, name, slug}[] — đúng format
+      });
+  }, []);
+
+  useEffect(() => {
     fetchBooks(filters);
   }, [filters, fetchBooks]);
 
@@ -57,6 +70,13 @@ export default function CardBooks() {
   const handleFiltersUpdate = useCallback((newFilters: Filters) => {
     setFilters(newFilters);
   }, []);
+
+  const handleEdit = useCallback((id?: string) => {
+    if (!id) return;
+    setEditId(id);
+    setEditOpen(true);
+  }, []);
+
   useBookFiltersTool_HumanLoop(handleFiltersUpdate);
   const handleRefresh = useCallback(
     () => fetchBooks(filters),
@@ -93,18 +113,26 @@ export default function CardBooks() {
             books.map((book) => (
               <BookRow
                 key={book.id}
-                image={book.coverImage || "/yuzuha.png"}
+                id={book.id}
+                image={book.imageUrl || "/harry.jpg"}
                 title={book.title}
                 author={book.author}
                 star={0}
                 status={book.status}
                 onDelete={handleRefresh}
-                onEdit={handleRefresh}
+                onEdit={handleEdit}
               />
             ))
           )}
         </CardContent>
       </ScrollArea>
+      <EditBookID
+        id={editId}
+        open={editOpen}
+        categories={categories}
+        onOpenChange={setEditOpen}
+        onSuccess={handleRefresh}
+      />
     </Card>
   );
 }

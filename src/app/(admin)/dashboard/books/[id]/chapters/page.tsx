@@ -214,10 +214,6 @@ const EditPage = () => {
       const updatePromises: Promise<Response>[] = [];
       const newChapters: any[] = [];
 
-      // ✅ Debug
-      console.log("actualBookId:", actualBookId);
-      console.log("all chapters:", chapters);
-
       chapters.forEach((chapter: any) => {
         if (chapter.id) {
           // Chapter đã có trong DB → PATCH
@@ -335,9 +331,6 @@ const EditPage = () => {
 
         const bookData = await bookRes.json();
         const chaptersData = await chaptersRes.json();
-
-        console.log("BookData: ", bookData);
-        console.log("ChaoterData: ", chaptersData);
 
         setActualBookId(bookData.id);
 

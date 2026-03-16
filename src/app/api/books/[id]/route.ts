@@ -30,18 +30,34 @@ export async function PATCH(
   if (!session) {
     return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
   }
+
   const { id } = await params;
 
   try {
     const contentType = request.headers.get("content-type") || "";
 
-    // Axios sẽ tự động xử lý Content-Type chuẩn cho NestJS dựa trên type của body
-    const body = contentType.includes("multipart/form-data")
-      ? await request.formData()
-      : await request.json();
+    if (contentType.includes("multipart/form-data")) {
+      // ✅ Dùng fetch thay vì axiosServer cho FormData
+      // Axios có bug với multipart/form-data boundary
+      const body = await request.formData();
 
+      const res = await fetch(`${process.env.NESTJS_API_URL}/books/${id}`, {
+        method: "PATCH",
+        headers: {
+          Authorization: `Bearer ${session.accessToken}`,
+          // ❌ Không set Content-Type — fetch tự set boundary đúng
+        },
+        body,
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw { response: { status: res.status, data } };
+      return NextResponse.json(data);
+    }
+
+    // JSON thì dùng axiosServer bình thường
+    const body = await request.json();
     const res = await axiosServer.patch(`/books/${id}`, body);
-
     return NextResponse.json(res.data);
   } catch (error) {
     return handleApiError(error, "Cập nhật sách thất bại");
