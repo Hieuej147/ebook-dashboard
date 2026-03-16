@@ -80,7 +80,7 @@ export default function CardOrder() {
           className="w-full border-purple-500 text-purple-500 hover:bg-purple-500 hover:text-white"
           asChild
         >
-          <Link href="/admin/orders">View All Orders</Link>
+          <Link href="/dashboard/orders">View All Orders</Link>
         </Button>
       </CardFooter>
     </Card>
