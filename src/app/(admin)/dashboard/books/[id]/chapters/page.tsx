@@ -245,8 +245,6 @@ const EditPage = () => {
         }
       });
 
-      console.log("newChapters cần POST:", newChapters);
-
       // ✅ POST riêng, không gộp vào Promise.all với PATCH
       if (newChapters.length > 0) {
         const postRes = await fetch(`/api/chapters`, {
@@ -261,7 +259,6 @@ const EditPage = () => {
           alert("Lưu chương mới thất bại: " + err);
           return;
         }
-        console.log("✅ POST chapters thành công");
       }
 
       // PATCH các chương cũ
