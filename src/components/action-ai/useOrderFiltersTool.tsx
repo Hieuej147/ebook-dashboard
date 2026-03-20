@@ -7,12 +7,12 @@ const OrderFiltersSchema = z.object({
   search: z
     .string()
     .optional()
-    .describe("Từ khóa để tìm kiếm theo mã đơn hoặc tên khách hàng"),
+    .describe("Keywords to search by order ID or customer name"),
   status: z
     .enum(["ALL", "PENDING", "SHIPPED", "DELIVERED", "CANCELLED"])
     .optional()
-    .describe("Trạng thái đơn hàng cần lọc (mặc định là ALL)"),
-  page: z.number().optional().describe("Số trang cần chuyển đến"),
+    .describe("Order status to filter (defaults to ALL)"),
+  page: z.number().optional().describe("Page number to navigate to"),
 });
 
 type OrderFiltersProps = z.infer<typeof OrderFiltersSchema>;
@@ -24,14 +24,14 @@ export function useOrderFiltersTool(
     {
       name: "applyOrderFilters",
       description:
-        "Tự động áp dụng bộ lọc (search, status) hoặc chuyển trang (pagination) trên màn hình quản lý đơn hàng theo yêu cầu của user.",
+        "Automatically applies filters (search, status) or handles pagination on the order management screen based on user request.",
       parameters: OrderFiltersSchema,
       handler: async (args) => {
-        // AI tự động gọi hàm cập nhật giao diện
+        // AI automatically calls the interface update function
         onApplyFilters(args);
-        return `Đã tự động áp dụng: ${JSON.stringify(args)}`;
+        return `Successfully applied filters: ${JSON.stringify(args)}`;
       },
-      // Render một UI nhỏ trong chat để user biết AI đang thao tác giúp mình
+      // Renders a small UI in the chat to let the user know the AI is performing the action
       render: ({ status }) => {
         if (
           status === ToolCallStatus.InProgress ||
@@ -39,15 +39,14 @@ export function useOrderFiltersTool(
         ) {
           return (
             <div className="flex items-center gap-2 text-sm text-blue-600 bg-blue-50 p-2 rounded-lg border border-blue-100">
-              <span className="animate-spin">⏳</span> Đang thao tác trên giao
-              diện...
+              <span className="animate-spin">⏳</span> Updating interface...
             </div>
           );
         }
         if (status === ToolCallStatus.Complete) {
           return (
             <div className="text-sm text-green-600 bg-green-50 p-2 rounded-lg border border-green-100">
-              ✅ Đã hoàn tất thao tác!
+              ✅ Action completed!
             </div>
           );
         }

@@ -15,7 +15,7 @@ export function Progress({
 
   return (
     <div data-test-id="progress-steps">
-      <div className="bg-[var(--background)] rounded-lg overflow-hidden text-sm py-2">
+      <div className="bg-background rounded-lg overflow-hidden text-sm py-2">
         {logs.map((log, index) => (
           <div
             key={index}
@@ -28,7 +28,7 @@ export function Progress({
           >
             <div className="w-8">
               <div
-                className="w-4 h-4 border border-[var(--border)] bg-white flex items-center justify-center rounded-full mt-[10px] ml-[12px]"
+                className="w-4 h-4 border border-border bg-white flex items-center justify-center rounded-full mt-[10px] ml-[12px]"
                 data-test-id={
                   log.done
                     ? "progress-step-item_done"
@@ -36,14 +36,14 @@ export function Progress({
                 }
               >
                 {log.done ? (
-                  <CheckIcon className="w-3 h-3 text-[var(--primary)]" />
+                  <CheckIcon className="w-3 h-3 text-primary" />
                 ) : (
-                  <LoaderCircle className="w-3 h-3 text-[var(--primary)] animate-spin" />
+                  <LoaderCircle className="w-3 h-3 text-primary animate-spin" />
                 )}
               </div>
               {index < logs.length - 1 && (
                 <div
-                  className={cn("h-full w-[1px] bg-[var(--border)] ml-[20px]")}
+                  className={cn("h-full w-px bg-border ml-[20px]")}
                 ></div>
               )}
             </div>

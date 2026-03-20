@@ -1,4 +1,4 @@
-// lib/session.ts
+"use server";
 import { jwtVerify, SignJWT } from "jose";
 import { cookies } from "next/headers";
 import { CustomerType, Role } from "./types";
@@ -36,12 +36,12 @@ export async function createSession(payload: Session) {
   // ExpiredAt của Cookie trình duyệt (7 ngày)
   const absoluteExpiresAt =
     payload.sessionExpiresAt || Date.now() + 7 * 24 * 60 * 60 * 1000;
-
+  const isProd = process.env.NODE_ENV === "production";
   cookieStore.set("session", session, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
+    secure: isProd,
     expires: new Date(absoluteExpiresAt),
-    sameSite: "lax",
+    sameSite: isProd ? "none" : "lax",
     path: "/",
   });
 }

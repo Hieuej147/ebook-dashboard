@@ -65,15 +65,12 @@ export default function Register() {
         <CardContent className="px-6 pb-6">
           {/* LỖI SERVER (Ví dụ: Email đã tồn tại) */}
           <div className="h-14">
-            {state?.error && (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="p-4 bg-destructive/10 border border-destructive/20 text-destructive rounded-lg flex items-center gap-3 text-sm"
-              >
+            {/* Giữ chiều cao cố định cho vùng thông báo lỗi server */}
+            {state?.message && (
+              <div className="p-3 bg-destructive/10 border border-destructive/20 text-destructive rounded-md flex items-center gap-2 text-sm">
                 <AlertCircle className="h-4 w-4 shrink-0" />
                 {state.message}
-              </motion.div>
+              </div>
             )}
           </div>
 

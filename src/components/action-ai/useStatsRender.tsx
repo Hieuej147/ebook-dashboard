@@ -38,17 +38,20 @@ function safeParse(result: string) {
     }
   }
 }
+
 export type Charts = {
   revenue_chart: { date: string; value: number }[];
   users_chart: { date: string; value: number }[];
   orders_chart: { date: string; value: number }[];
   books_chart: { date: string; value: number }[];
 };
+
 const Loading = ({ text }: { text: string }) => (
   <p className="text-sm text-muted-foreground animate-pulse">{text}</p>
 );
+
 const ParseError = () => (
-  <p className="text-sm text-red-500">❌ Lỗi parse data</p>
+  <p className="text-sm text-red-500">❌ Data parsing error</p>
 );
 
 // ============================
@@ -61,8 +64,8 @@ export function useOverviewStatsRender() {
       parameters: PeriodSchema,
       render: ({ status, result }) => {
         if (status === "inProgress")
-          return <Loading text="⏳ Đang tải thống kê..." />;
-        if (status === "executing") return <Loading text="⚙️ Đang xử lý..." />;
+          return <Loading text="⏳ Loading statistics..." />;
+        if (status === "executing") return <Loading text="⚙️ Processing..." />;
         const data = safeParse(result!);
         if (!data) return <ParseError />;
 
@@ -71,7 +74,7 @@ export function useOverviewStatsRender() {
           <div className="grid grid-cols-2 gap-3 my-2">
             <Card>
               <CardHeader className="pb-1">
-                <CardTitle className="text-sm">💰 Doanh thu</CardTitle>
+                <CardTitle className="text-sm">💰 Revenue</CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-2xl font-bold">
@@ -81,37 +84,37 @@ export function useOverviewStatsRender() {
                   className={`text-xs ${revenue.revenue_change_pct >= 0 ? "text-green-500" : "text-red-500"}`}
                 >
                   {revenue.revenue_change_pct >= 0 ? "▲" : "▼"}{" "}
-                  {Math.abs(revenue.revenue_change_pct)}% so kỳ trước
+                  {Math.abs(revenue.revenue_change_pct)}% vs last period
                 </p>
               </CardContent>
             </Card>
             <Card>
               <CardHeader className="pb-1">
-                <CardTitle className="text-sm">👥 Người dùng</CardTitle>
+                <CardTitle className="text-sm">👥 Users</CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-2xl font-bold">
                   {users.total_users.toLocaleString()}
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  +{users.new_users} mới
+                  +{users.new_users} new
                 </p>
               </CardContent>
             </Card>
             <Card>
               <CardHeader className="pb-1">
-                <CardTitle className="text-sm">📦 Đơn hàng</CardTitle>
+                <CardTitle className="text-sm">📦 Orders</CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-2xl font-bold">{orders.total_orders}</p>
                 <p className="text-xs text-muted-foreground">
-                  Hoàn thành: {orders.completion_rate}%
+                  Completion rate: {orders.completion_rate}%
                 </p>
               </CardContent>
             </Card>
             <Card>
               <CardHeader className="pb-1">
-                <CardTitle className="text-sm">📚 Sách</CardTitle>
+                <CardTitle className="text-sm">📚 Books</CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-2xl font-bold">
@@ -142,9 +145,9 @@ export function useRevenueStatsRender() {
       parameters: PeriodSchema,
       render: ({ status, parameters, result }) => {
         if (status === "inProgress")
-          return <Loading text="⏳ Đang tải doanh thu..." />;
+          return <Loading text="⏳ Loading revenue..." />;
         if (status === "executing")
-          return <Loading text={`⚙️ Đang xử lý ${parameters.period}...`} />;
+          return <Loading text={`⚙️ Processing ${parameters.period}...`} />;
 
         const data = safeParse(result!);
         if (!data) return <ParseError />;
@@ -153,13 +156,13 @@ export function useRevenueStatsRender() {
           <Card className="my-2">
             <CardHeader>
               <CardTitle className="text-sm">
-                💰 Doanh thu — {data.period}
+                💰 Revenue — {data.period}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               <div className="flex justify-between">
                 <span className="text-muted-foreground text-sm">
-                  Tổng doanh thu
+                  Total Revenue
                 </span>
                 <span className="font-bold">
                   ${data.total_revenue.toLocaleString()}
@@ -167,7 +170,7 @@ export function useRevenueStatsRender() {
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground text-sm">
-                  So kỳ trước
+                  vs Last Period
                 </span>
                 <span
                   className={
@@ -181,7 +184,7 @@ export function useRevenueStatsRender() {
                 </span>
               </div>
               <p className="text-xs font-semibold text-muted-foreground pt-2">
-                🏆 Top sách bán chạy
+                🏆 Top Selling Books
               </p>
               <ResponsiveContainer width="100%" height={150}>
                 <BarChart data={data.top_books}>
@@ -214,9 +217,9 @@ export function useUserStatsRender() {
       parameters: PeriodSchema,
       render: ({ status, parameters, result }) => {
         if (status === "inProgress")
-          return <Loading text="⏳ Đang tải users..." />;
+          return <Loading text="⏳ Loading users..." />;
         if (status === "executing")
-          return <Loading text={`⚙️ Đang xử lý ${parameters.period}...`} />;
+          return <Loading text={`⚙️ Processing ${parameters.period}...`} />;
 
         const data = safeParse(result!);
         if (!data) return <ParseError />;
@@ -229,7 +232,7 @@ export function useUserStatsRender() {
           <Card className="my-2">
             <CardHeader>
               <CardTitle className="text-sm">
-                👥 Người dùng — {data.period}
+                👥 Users — {data.period}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
@@ -238,13 +241,13 @@ export function useUserStatsRender() {
                   <p className="text-xl font-bold">
                     {data.total_users.toLocaleString()}
                   </p>
-                  <p className="text-xs text-muted-foreground">Tổng</p>
+                  <p className="text-xs text-muted-foreground">Total</p>
                 </div>
                 <div>
                   <p className="text-xl font-bold text-green-500">
                     +{data.new_users}
                   </p>
-                  <p className="text-xs text-muted-foreground">Mới</p>
+                  <p className="text-xs text-muted-foreground">New</p>
                 </div>
                 <div>
                   <p className="text-xl font-bold text-blue-500">
@@ -290,9 +293,9 @@ export function useOrderStatsRender() {
       parameters: PeriodSchema,
       render: ({ status, parameters, result }) => {
         if (status === "inProgress")
-          return <Loading text="⏳ Đang tải đơn hàng..." />;
+          return <Loading text="⏳ Loading orders..." />;
         if (status === "executing")
-          return <Loading text={`⚙️ Đang xử lý ${parameters.period}...`} />;
+          return <Loading text={`⚙️ Processing ${parameters.period}...`} />;
 
         const data = safeParse(result!);
         if (!data) return <ParseError />;
@@ -305,24 +308,24 @@ export function useOrderStatsRender() {
           <Card className="my-2">
             <CardHeader>
               <CardTitle className="text-sm">
-                📦 Đơn hàng — {data.period}
+                📦 Orders — {data.period}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
               <div className="grid grid-cols-3 gap-2 text-center">
                 <div>
                   <p className="text-xl font-bold">{data.total_orders}</p>
-                  <p className="text-xs text-muted-foreground">Tổng đơn</p>
+                  <p className="text-xs text-muted-foreground">Total</p>
                 </div>
                 <div>
                   <p className="text-xl font-bold text-green-500">
                     {data.completion_rate}%
                   </p>
-                  <p className="text-xs text-muted-foreground">Hoàn thành</p>
+                  <p className="text-xs text-muted-foreground">Completed</p>
                 </div>
                 <div>
                   <p className="text-xl font-bold">${data.avg_order_value}</p>
-                  <p className="text-xs text-muted-foreground">Avg value</p>
+                  <p className="text-xs text-muted-foreground">Avg Value</p>
                 </div>
               </div>
               <ResponsiveContainer width="100%" height={130}>
@@ -348,6 +351,7 @@ export function useOrderStatsRender() {
     [],
   );
 }
+
 // ============================
 // BOOK STATS
 // ============================
@@ -358,8 +362,8 @@ export function useBookStatsRender() {
       parameters: z.object({}),
       render: ({ status, result }) => {
         if (status === "inProgress")
-          return <Loading text="⏳ Đang tải sách..." />;
-        if (status === "executing") return <Loading text="⚙️ Đang xử lý..." />;
+          return <Loading text="⏳ Loading books..." />;
+        if (status === "executing") return <Loading text="⚙️ Processing..." />;
 
         const data = safeParse(result!);
         if (!data) return <ParseError />;
@@ -378,7 +382,7 @@ export function useBookStatsRender() {
         return (
           <Card className="my-2">
             <CardHeader>
-              <CardTitle className="text-sm">📚 Thống kê sách</CardTitle>
+              <CardTitle className="text-sm">📚 Book Statistics</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               {/* Status */}
@@ -396,7 +400,7 @@ export function useBookStatsRender() {
 
               {/* Top category */}
               <p className="text-xs font-semibold text-muted-foreground pt-1">
-                📂 Top Category
+                📂 Top Categories
               </p>
               <ResponsiveContainer width="100%" height={120}>
                 <BarChart data={categoryData}>
@@ -411,7 +415,7 @@ export function useBookStatsRender() {
               {data.low_stock_books?.length > 0 && (
                 <>
                   <p className="text-xs font-semibold text-red-500 pt-1">
-                    ⚠️ Sắp hết hàng
+                    ⚠️ Low Stock
                   </p>
                   <div className="space-y-1">
                     {data.low_stock_books.map(
@@ -424,7 +428,7 @@ export function useBookStatsRender() {
                             {b.title}
                           </span>
                           <span className="text-red-500 font-bold">
-                            còn {b.stock}
+                            {b.stock} left
                           </span>
                         </div>
                       ),
@@ -459,10 +463,10 @@ export function useQuickStatsRender() {
       render: ({ status, result }) => {
         if (status === "inProgress")
           return (
-            <p className="text-sm animate-pulse">⏳ Đang tải quick stats...</p>
+            <p className="text-sm animate-pulse">⏳ Loading quick stats...</p>
           );
         if (status === "executing")
-          return <p className="text-sm animate-pulse">⚙️ Đang xử lý...</p>;
+          return <p className="text-sm animate-pulse">⚙️ Processing...</p>;
         if (status === "complete" && result) {
           const data = safeParse(result);
           if (!data) return <ParseError />;
@@ -504,7 +508,7 @@ export function useQuickStatsRender() {
 }
 
 // ============================
-// EXPORT GOM LẠI
+// MAIN EXPORT HOOK
 // ============================
 export function useStatsTools() {
   useQuickStatsRender();

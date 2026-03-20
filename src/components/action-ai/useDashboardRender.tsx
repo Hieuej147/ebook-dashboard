@@ -1,32 +1,35 @@
 "use client";
-import { useHumanInTheLoop, ToolCallStatus, useFrontendTool } from "@copilotkit/react-core/v2";
+import {
+  useHumanInTheLoop,
+  ToolCallStatus,
+  useFrontendTool,
+} from "@copilotkit/react-core/v2";
 import { useEffect, useRef } from "react";
 import { z } from "zod";
 import { QuickStats } from "./useStatsRender";
 
-
 const DashboardStatsSchema = z.object({
-  total_revenue: z.number().describe("Tổng doanh thu thực từ data"),
+  total_revenue: z.number().describe("Total actual revenue from data"),
   revenue_trend: z
     .string()
-    .describe("Mô tả xu hướng, vd: +12.5% so tháng trước"),
-  active_users: z.number().describe("Số user active"),
-  users_trend: z.string().describe("Mô tả xu hướng users"),
-  books_published: z.number().describe("Số sách PUBLISHED"),
-  books_trend: z.string().describe("Mô tả xu hướng sách"),
-  orders_pending: z.number().describe("Số đơn đang PENDING"),
+    .describe("Trend description, e.g.: +12.5% from last month"),
+  active_users: z.number().describe("Number of active users"),
+  users_trend: z.string().describe("User trend description"),
+  books_published: z.number().describe("Number of PUBLISHED books"),
+  books_trend: z.string().describe("Book trend description"),
+  orders_pending: z.number().describe("Number of PENDING orders"),
   revenue_chart: z
     .array(z.object({ date: z.string(), value: z.number() }))
-    .describe("Dữ liệu chart doanh thu theo thời gian"),
+    .describe("Revenue chart data over time"),
   users_chart: z
     .array(z.object({ date: z.string(), value: z.number() }))
-    .describe("Dữ liệu chart users theo thời gian"),
+    .describe("User chart data over time"),
   orders_chart: z
     .array(z.object({ date: z.string(), value: z.number() }))
-    .describe("Dữ liệu chart đơn hàng theo thời gian"),
+    .describe("Order chart data over time"),
   books_chart: z
     .array(z.object({ date: z.string(), value: z.number() }))
-    .describe("Dữ liệu chart sách theo thời gian"),
+    .describe("Book chart data over time"),
 });
 
 type DashboardStatsProps = z.infer<typeof DashboardStatsSchema>;
@@ -38,19 +41,17 @@ export function useDashboardStatsComponent(
     {
       name: "updateDashboardStats",
       description:
-        "Cập nhật các StatCard trên Dashboard. Gọi sau khi đã có data từ get_overview_stats. AI tự điền tất cả tham số từ data đã lấy được bao gồm cả chart data.",
+        "Updates the StatCards on the Dashboard. Call this after receiving data from get_overview_stats. AI automatically populates all parameters including chart data.",
       parameters: DashboardStatsSchema,
       render: ({ args, status, respond, result }) => {
         if (status === ToolCallStatus.InProgress)
-          return (
-            <p className="text-sm animate-pulse">⏳ Đang chuẩn bị dữ liệu...</p>
-          );
+          return <p className="text-sm animate-pulse">⏳ Preparing data...</p>;
 
         if (status === ToolCallStatus.Executing && respond)
           return (
             <div className="p-3 border border-blue-200 rounded-xl bg-blue-50/50 text-sm space-y-3">
               <p className="font-bold text-blue-800">
-                📊 Cập nhật Dashboard với số liệu mới?
+                📊 Update Dashboard with new data?
               </p>
               <div className="grid grid-cols-2 gap-2 text-xs">
                 <div>
@@ -75,7 +76,7 @@ export function useDashboardStatsComponent(
                   📦 Pending: <b>{args.orders_pending}</b>
                 </div>
                 <div>
-                  📊 Charts: <b>{args.revenue_chart?.length ?? 0} điểm</b>
+                  📊 Charts: <b>{args.revenue_chart?.length ?? 0} points</b>
                 </div>
               </div>
               <div className="flex gap-2">
@@ -86,13 +87,13 @@ export function useDashboardStatsComponent(
                   }}
                   className="bg-blue-500 text-white px-3 py-1.5 rounded text-xs font-medium"
                 >
-                  ✅ Cập nhật
+                  ✅ Update
                 </button>
                 <button
                   onClick={() => respond({ confirmed: false })}
                   className="bg-gray-200 text-gray-700 px-3 py-1.5 rounded text-xs font-medium"
                 >
-                  ❌ Huỷ
+                  ❌ Cancel
                 </button>
               </div>
             </div>
@@ -105,8 +106,8 @@ export function useDashboardStatsComponent(
               className={`p-2 text-sm ${parsed.confirmed ? "text-green-600" : "text-gray-500"}`}
             >
               {parsed.confirmed
-                ? "✅ Dashboard đã được cập nhật!"
-                : "❌ Đã huỷ cập nhật."}
+                ? "✅ Dashboard has been updated!"
+                : "❌ Update cancelled."}
             </div>
           );
         }
@@ -117,14 +118,15 @@ export function useDashboardStatsComponent(
     [onUpdate],
   );
 }
+
 const UpdateQuickStatsSchema = z.object({
   conversion_rate: z
     .number()
-    .describe("Tỉ lệ chuyển đổi (%), tính từ completion_rate / 10"),
-  avg_rating: z.number().describe("Đánh giá trung bình sách (0-5)"),
+    .describe("Conversion rate (%), calculated from completion_rate / 10"),
+  avg_rating: z.number().describe("Average book rating (0-5)"),
   return_rate: z
     .number()
-    .describe("Tỉ lệ hoàn trả (%), tính từ 100 - completion_rate"),
+    .describe("Return rate (%), calculated from 100 - completion_rate"),
 });
 
 export function useUpdateQuickStatsTool(onUpdate: (stats: QuickStats) => void) {
@@ -137,11 +139,11 @@ export function useUpdateQuickStatsTool(onUpdate: (stats: QuickStats) => void) {
     {
       name: "updateQuickStats",
       description:
-        "Cập nhật Quick Stats card trên Dashboard. Gọi sau khi đã có data từ get_quick_stats hoặc get_order_stats.",
+        "Updates the Quick Stats card on the Dashboard. Call this after receiving data from get_quick_stats or get_order_stats.",
       parameters: UpdateQuickStatsSchema,
       handler: async (args) => {
         onUpdateRef.current(args);
-        return `Đã cập nhật Quick Stats`;
+        return `Quick Stats updated successfully`;
       },
       render: ({ status }) => {
         if (
@@ -149,15 +151,11 @@ export function useUpdateQuickStatsTool(onUpdate: (stats: QuickStats) => void) {
           status === ToolCallStatus.Executing
         )
           return (
-            <p className="text-sm animate-pulse">
-              📊 Đang cập nhật Quick Stats...
-            </p>
+            <p className="text-sm animate-pulse">📊 Updating Quick Stats...</p>
           );
         if (status === ToolCallStatus.Complete)
           return (
-            <p className="text-sm text-green-600">
-              ✅ Quick Stats đã cập nhật!
-            </p>
+            <p className="text-sm text-green-600">✅ Quick Stats updated!</p>
           );
         return <></>;
       },

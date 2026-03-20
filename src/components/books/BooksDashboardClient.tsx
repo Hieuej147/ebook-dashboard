@@ -9,13 +9,13 @@ import CategoryFolder from "@/components/categories/CategoryFolder";
 import DialogBook from "@/components/books/DialogBook";
 import { BookRow } from "@/components/books/RowBook";
 import Link from "next/link";
-import { EditBookID } from "@/components/SheetEdit";
 import { FilterButton } from "@/components/ui/FilterButton";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils";
 import DialogCategory from "@/components/categories/DialogCategory";
 import { useBookFiltersTool } from "../action-ai/useBookFiltersTool";
 import { SearchBar } from "../SearchBar";
+import { EditBookID } from "./SheetEdit";
 
 export default function BooksDashboardClient({
   initialBooks,

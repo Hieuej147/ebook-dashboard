@@ -4,7 +4,6 @@ import { encrypt, getSession } from "./lib/session";
 import { decodeJwtExpiry } from "./lib/token";
 import arcjet, { shield, fixedWindow, detectBot } from "@arcjet/next";
 
-
 const publicRoutes = ["/signin", "/signup"];
 
 // ✅ Rule chung cho toàn app
@@ -40,7 +39,6 @@ export default async function proxy(req: NextRequest) {
     return NextResponse.next();
   }
 
-  // ✅ Arcjet check — chạy TRƯỚC mọi logic khác
   const isAuthRoute =
     pathname.startsWith("/api/auth") ||
     pathname === "/signin" ||
@@ -64,7 +62,6 @@ export default async function proxy(req: NextRequest) {
     return NextResponse.json({ message: "Forbidden" }, { status: 403 });
   }
 
-  // ===== Logic cũ giữ nguyên =====
   const session = await getSession();
   const isPublicRoute = publicRoutes.includes(pathname);
   const isProtectedRoute =
@@ -127,6 +124,7 @@ export default async function proxy(req: NextRequest) {
 
         const newSessionValue = await encrypt(newSessionPayload);
         const requestHeaders = new Headers(req.headers);
+        const isProd = process.env.NODE_ENV === "production";
         requestHeaders.set("cookie", `session=${newSessionValue}`);
 
         const response = NextResponse.next({
@@ -134,8 +132,8 @@ export default async function proxy(req: NextRequest) {
         });
         response.cookies.set("session", newSessionValue, {
           httpOnly: true,
-          secure: process.env.NODE_ENV === "production",
-          sameSite: "lax",
+          secure: isProd,
+          sameSite: isProd ? "none" : "lax",
           path: "/",
           expires: new Date(session.sessionExpiresAt),
         });

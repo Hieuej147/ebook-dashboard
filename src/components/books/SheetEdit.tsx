@@ -1,3 +1,4 @@
+"use client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -9,7 +10,6 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { Form } from "./ui/form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { BookSchema, UpdateBookInput } from "@/lib/zod";
 import { Controller, useForm } from "react-hook-form";
@@ -36,6 +36,7 @@ import { useEffect, useState } from "react";
 import { ImageIcon, Loader2, ZoomIn } from "lucide-react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { Form } from "../ui/form";
 
 interface Category {
   id: string;
@@ -72,6 +73,7 @@ export function EditBookID({
       isActive: true,
     },
   });
+
   useEffect(() => {
     if (id && open) {
       const fetchData = async () => {
@@ -86,23 +88,25 @@ export function EditBookID({
             ...data,
             categoryId: foundcategory?.id || "",
           };
-          // form.reset sẽ "đổ" toàn bộ dữ liệu từ API vào các ô Input
+          // Reset form with data from API
           form.reset(formatData);
         } catch (error) {
-          console.error("Lỗi tải thông tin sách:", error);
+          console.error("Error loading book info:", error);
+          toast.error("Failed to load book data.");
         } finally {
           setIsFetching(false);
         }
       };
       fetchData();
     }
-  }, [id, open, form]);
+  }, [id, open, form, categories]);
+
   const onSubmit = async (values: UpdateBookInput) => {
     setIsSubmitting(true);
     try {
       const formData = new FormData();
 
-      // Thêm các trường text/number vào FormData
+      // Append text/number fields to FormData
       formData.append("title", values.title);
       formData.append("author", values.author);
       formData.append("price", String(values.price));
@@ -111,9 +115,9 @@ export function EditBookID({
       formData.append("isActive", String(values.isActive));
       formData.append("categoryId", values.categoryId);
 
-      // Xử lý file: imageUrl ở đây thực tế sẽ chứa Object File từ input
+      // Handle file: imageUrl contains the File object from the input
       if (values.imageUrl instanceof File) {
-        formData.append("image", values.imageUrl); // "image" phải khớp với key API yêu cầu
+        formData.append("image", values.imageUrl);
       }
 
       const response = await fetch(`/api/books/${id}`, {
@@ -125,30 +129,31 @@ export function EditBookID({
       if (response.ok) {
         onSuccess();
         onOpenChange(false);
-        toast.success("Update success!");
+        toast.success("Update successful!");
       } else {
-        toast.error(`Updated Failed: ${data.message}`);
+        toast.error(`Update Failed: ${data.message}`);
       }
     } catch (error) {
-      toast.error("Error connected");
+      toast.error("Connection error");
     } finally {
       setIsSubmitting(false);
     }
   };
+
   const handleEditChapters = () => {
     router.push(`/dashboard/books/${id}/chapters`);
   };
+
   return (
     <Sheet onOpenChange={onOpenChange} open={open}>
       <SheetContent className="sm:max-w-xl overflow-y-auto p-4">
-        {" "}
-        {/* Tăng nhẹ chiều rộng nếu cần */}
         <SheetHeader className="mb-6">
-          <SheetTitle className="text-2xl font-bold">Chỉnh sửa sách</SheetTitle>
+          <SheetTitle className="text-2xl font-bold">Edit Book</SheetTitle>
           <SheetDescription>
-            Cập nhật thông tin chi tiết cho cuốn sách của bạn.
+            Update the detailed information for your book.
           </SheetDescription>
         </SheetHeader>
+
         {isFetching ? (
           <div className="flex h-[400px] items-center justify-center">
             <Loader2 className="h-8 w-8 animate-spin text-purple-600" />
@@ -168,7 +173,7 @@ export function EditBookID({
                     control={form.control}
                     render={({ field, fieldState }) => (
                       <Field data-invalid={fieldState.invalid}>
-                        <FieldLabel>ID Hệ thống</FieldLabel>
+                        <FieldLabel>System ID</FieldLabel>
                         <Input
                           {...field}
                           disabled
@@ -182,7 +187,7 @@ export function EditBookID({
                     control={form.control}
                     render={({ field, fieldState }) => (
                       <Field data-invalid={fieldState.invalid}>
-                        <FieldLabel>Mã SKU</FieldLabel>
+                        <FieldLabel>SKU Code</FieldLabel>
                         <Input
                           {...field}
                           disabled
@@ -200,8 +205,8 @@ export function EditBookID({
                     control={form.control}
                     render={({ field, fieldState }) => (
                       <Field data-invalid={fieldState.invalid}>
-                        <FieldLabel>Tiêu đề sách</FieldLabel>
-                        <Input {...field} placeholder="Tên sách..." />
+                        <FieldLabel>Book Title</FieldLabel>
+                        <Input {...field} placeholder="Enter title..." />
                         <FieldError errors={[fieldState.error]} />
                       </Field>
                     )}
@@ -211,8 +216,8 @@ export function EditBookID({
                     control={form.control}
                     render={({ field, fieldState }) => (
                       <Field data-invalid={fieldState.invalid}>
-                        <FieldLabel>Tác giả</FieldLabel>
-                        <Input {...field} placeholder="Tên tác giả..." />
+                        <FieldLabel>Author</FieldLabel>
+                        <Input {...field} placeholder="Enter author name..." />
                         <FieldError errors={[fieldState.error]} />
                       </Field>
                     )}
@@ -226,7 +231,7 @@ export function EditBookID({
                     control={form.control}
                     render={({ field, fieldState }) => (
                       <Field data-invalid={fieldState.invalid}>
-                        <FieldLabel>Thể loại hiện tại</FieldLabel>
+                        <FieldLabel>Current Category</FieldLabel>
                         <Input {...field} disabled className="bg-slate-100" />
                       </Field>
                     )}
@@ -236,13 +241,13 @@ export function EditBookID({
                     control={form.control}
                     render={({ field, fieldState }) => (
                       <Field data-invalid={fieldState.invalid}>
-                        <FieldLabel>Đổi thể loại</FieldLabel>
+                        <FieldLabel>Change Category</FieldLabel>
                         <Select
                           onValueChange={field.onChange}
                           value={field.value}
                         >
                           <SelectTrigger>
-                            <SelectValue placeholder="Chọn mới..." />
+                            <SelectValue placeholder="Select new..." />
                           </SelectTrigger>
                           <SelectContent>
                             {categories?.map((cate) => (
@@ -265,7 +270,7 @@ export function EditBookID({
                     control={form.control}
                     render={({ field, fieldState }) => (
                       <Field data-invalid={fieldState.invalid}>
-                        <FieldLabel>Giá (VNĐ)</FieldLabel>
+                        <FieldLabel>Price (VND)</FieldLabel>
                         <Input
                           type="number"
                           {...field}
@@ -282,7 +287,7 @@ export function EditBookID({
                     control={form.control}
                     render={({ field, fieldState }) => (
                       <Field data-invalid={fieldState.invalid}>
-                        <FieldLabel>Số lượng tồn</FieldLabel>
+                        <FieldLabel>Stock Quantity</FieldLabel>
                         <Input
                           type="number"
                           {...field}
@@ -303,7 +308,7 @@ export function EditBookID({
                     control={form.control}
                     render={({ field, fieldState }) => (
                       <Field data-invalid={fieldState.invalid}>
-                        <FieldLabel>Trạng thái XB</FieldLabel>
+                        <FieldLabel>Publishing Status</FieldLabel>
                         <Select
                           value={field.value}
                           onValueChange={field.onChange}
@@ -324,7 +329,7 @@ export function EditBookID({
                     control={form.control}
                     render={({ field, fieldState }) => (
                       <Field data-invalid={fieldState.invalid}>
-                        <FieldLabel>Kích hoạt bán</FieldLabel>
+                        <FieldLabel>Enable Sales</FieldLabel>
                         <Select
                           value={String(field.value)}
                           onValueChange={(val) =>
@@ -335,8 +340,12 @@ export function EditBookID({
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="true">Bán (True)</SelectItem>
-                            <SelectItem value="false">Ẩn (False)</SelectItem>
+                            <SelectItem value="true">
+                              Available (True)
+                            </SelectItem>
+                            <SelectItem value="false">
+                              Hidden (False)
+                            </SelectItem>
                           </SelectContent>
                         </Select>
                       </Field>
@@ -351,7 +360,6 @@ export function EditBookID({
                     field: { onChange, value, ...field },
                     fieldState,
                   }) => {
-                    // Logic xử lý URL để preview
                     const previewUrl =
                       value instanceof File
                         ? URL.createObjectURL(value)
@@ -362,7 +370,7 @@ export function EditBookID({
                     return (
                       <Field data-invalid={fieldState.invalid}>
                         <FieldLabel className="flex items-center gap-2">
-                          Ảnh bìa sách{" "}
+                          Book Cover Image{" "}
                           <ImageIcon size={14} className="text-slate-400" />
                         </FieldLabel>
 
@@ -378,7 +386,7 @@ export function EditBookID({
                             }}
                           />
 
-                          {/* HIỆU ỨNG HOVER ĐỂ XEM ẢNH */}
+                          {/* HOVER EFFECT FOR IMAGE PREVIEW */}
                           {previewUrl && (
                             <HoverCard openDelay={200} closeDelay={100}>
                               <HoverCardTrigger asChild>
@@ -407,9 +415,9 @@ export function EditBookID({
                                     alt="Large preview"
                                     className="w-full h-full object-cover animate-in fade-in zoom-in duration-200"
                                   />
-                                  <div className="absolute bottom-0 left-0 right-0 p-2 bg-linear-to-t from-black/60 to-transparent">
+                                  <div className="absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-black/60 to-transparent">
                                     <p className="text-[10px] text-white font-medium">
-                                      Xem trước ảnh bìa
+                                      Cover Preview
                                     </p>
                                   </div>
                                 </div>
@@ -436,7 +444,7 @@ export function EditBookID({
             {isSubmitting ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             ) : null}
-            Lưu thay đổi
+            Save Changes
           </Button>
           <div className="grid grid-cols-2 gap-2 w-full">
             <Button
@@ -444,11 +452,11 @@ export function EditBookID({
               onClick={handleEditChapters}
               className="w-full"
             >
-              Sửa Chương
+              Edit Chapters
             </Button>
             <SheetClose asChild>
               <Button variant="secondary" className="w-full">
-                Đóng
+                Close
               </Button>
             </SheetClose>
           </div>

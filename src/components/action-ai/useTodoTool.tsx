@@ -6,28 +6,39 @@ import { z } from "zod";
 const TodoActionSchema = z.object({
   action: z
     .enum(["add", "edit", "delete", "toggle"])
-    .describe("Hành động cần thực hiện"),
-  id: z.string().optional().describe("ID của todo cần edit/delete/toggle"),
-  text: z.string().optional().describe("Nội dung todo (dùng cho add/edit)"),
-  date: z.string().optional().describe("Ngày của todo, format: yyyy-MM-dd"),
+    .describe("Action to perform on the todo item"),
+  id: z
+    .string()
+    .optional()
+    .describe("ID of the todo to edit, delete, or toggle"),
+  text: z
+    .string()
+    .optional()
+    .describe("Content of the todo (used for add/edit)"),
+  date: z
+    .string()
+    .optional()
+    .describe("Date for the todo item, format: yyyy-MM-dd"),
 });
 
 type TodoAction = z.infer<typeof TodoActionSchema>;
 
 export function useTodoTool(onAction: (action: TodoAction) => void) {
   const onActionRef = useRef(onAction);
+
   useEffect(() => {
     onActionRef.current = onAction;
   }, [onAction]);
+
   useFrontendTool(
     {
       name: "manageTodo",
       description:
-        "Thêm, sửa, xóa, hoặc đánh dấu hoàn thành todo trong Todolist trên Dashboard.",
+        "Add, edit, delete, or toggle the completion status of todos in the Todo List on the Dashboard.",
       parameters: TodoActionSchema,
       handler: async (args) => {
         onActionRef.current(args);
-        return `Đã thực hiện: ${args.action} todo${args.text ? ` "${args.text}"` : ""}`;
+        return `Successfully ${args.action}ed todo${args.text ? ` "${args.text}"` : ""}`;
       },
       render: ({ status }) => {
         if (
@@ -35,11 +46,11 @@ export function useTodoTool(onAction: (action: TodoAction) => void) {
           status === ToolCallStatus.Executing
         )
           return (
-            <p className="text-sm animate-pulse">📝 Đang cập nhật todo...</p>
+            <p className="text-sm animate-pulse">📝 Updating todo list...</p>
           );
         if (status === ToolCallStatus.Complete)
           return (
-            <p className="text-sm text-green-600">✅ Đã cập nhật Todolist!</p>
+            <p className="text-sm text-green-600">✅ Todo list updated!</p>
           );
         return null;
       },

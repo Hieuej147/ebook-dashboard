@@ -6,7 +6,7 @@ import { ScrollArea } from "../ui/scroll-area";
 import DialogBook from "./DialogBook";
 import { useBookFiltersTool_HumanLoop } from "../action-ai/useBookFiltersTool";
 import { Loader2 } from "lucide-react";
-import { EditBookID } from "../SheetEdit";
+import { EditBookID } from "./SheetEdit";
 
 type Book = {
   id: string;

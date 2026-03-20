@@ -24,10 +24,10 @@ export function useCardLayoutTool(onReorder: (order: string[]) => void) {
   useFrontendTool(
     {
       name: "reorderDashboardCards",
-      description: `Sắp xếp thứ tự cards trong từng cột trên Dashboard.
-Cột trái (cố định): card-books, card-todo
-Cột phải (cố định): card-orders, card-quickstats, card-activity
-Chỉ thay đổi thứ tự TRONG từng cột, không chuyển card sang cột khác.`,
+      description: `Reorder the dashboard cards within each column.
+Left column (fixed): card-books, card-todo
+Right column (fixed): card-orders, card-quickstats, card-activity
+Only change the order WITHIN each column. Do NOT move cards between columns.`,
       parameters: CardLayoutSchema,
       handler: async (args) => {
         // ✅ Merge 2 cột thành 1 array theo kiểu xen kẽ

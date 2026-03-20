@@ -1,4 +1,4 @@
-// lib/token.ts
+
 export function decodeJwtExpiry(token: string): number | null {
   try {
     const base64Payload = token.split(".")[1];

@@ -1,4 +1,4 @@
-// lib/dal.ts
+"use server";
 import axiosServer from "./axios-server";
 
 export const getAdminBooks = async (params: {
