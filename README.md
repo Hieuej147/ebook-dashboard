@@ -1,196 +1,207 @@
-## BookStudio Dashboard
+# 📊 BookStudio Dashboard
 
-Admin dashboard cho nền tảng ebook, xây bằng **Next.js App Router**, tích hợp **AI Copilot**, quản lý **sách, danh mục, đơn hàng, người dùng**.
+> _A modern AI-powered admin dashboard for managing an e-book platform — built with Next.js App Router, CopilotKit, and LangGraph_
 
-### Tech stack
+## ✨ Introduction
 
-- **Framework**: Next.js 16 (App Router, Server Components)
-- **Language**: TypeScript
-- **UI**: Tailwind CSS, shadcn/ui, Radix UI, Lucide Icons
-- **State / Forms**: React Hook Form, Zod
-- **Charts / UI nâng cao**: Recharts, dnd-kit, embla-carousel
-- **Auth & Backend**:
-  - FE: Next.js + `jose` + httpOnly session cookie
-  - BE: NestJS (REST API, JWT) – kết nối qua `axiosServer`
-- **AI / Copilot**: CopilotKit + LangGraph agent (proxy qua `/api/copilotkit`)
-- **Security runtime (dự kiến)**: Arcjet – AI runtime security [`https://arcjet.com/`](https://arcjet.com/)
+**BookStudio Dashboard** is a full-featured admin interface for the [API-EBook](https://github.com/Hieuej147/ebook-api) backend. It is engineered with **Next.js 16 (App Router)** and **TypeScript**, featuring an intelligent AI Copilot powered by **CopilotKit + LangGraph** that can write book content, analyze business stats, manage todos, and interact directly with the dashboard UI.
+
+### Why build this project?
+
+- 🎯 **Modern Architecture**: Server Components, Route Handlers as proxy, httpOnly session cookies — no sensitive data leaks to the browser.
+- 🤖 **AI-Native**: Deep CopilotKit + LangGraph integration — the AI can reorder dashboard cards, update stats, filter books, and write chapter content in real time.
+- 🔐 **Security-First**: Arcjet runtime protection (rate limiting, bot detection, shield), Zod validation on all API routes, role-based access control.
+- ⚡ **Performance**: Strategic use of `useMemo`, `useCallback`, `useRef` to minimize re-renders; debounced AI state sync on the chapter editor.
+- 📱 **Responsive**: Full mobile/tablet support with collapsible sidebar and adaptive editor layout.
 
 ---
 
-## 1. Project structure
+## 🛠️ Tech Stack
 
-```text
-src/
-  app/
-    (auth)/
-      signin/
-      signup/
-    (admin)/
-      layout.tsx          # Admin shell (sidebar, navbar, AI panel)
-      dashboard/
-        page.tsx          # Tổng quan dashboard
-        books/
-        categories/
-        orders/
-        users/
-    actions/              # Server actions (auth, books)
-    api/                  # Next.js Route Handlers (proxy -> NestJS, Copilot)
-    layout.tsx            # Root layout (theme, CopilotKit provider)
-    page.tsx              # Landing page (marketing)
+| Category          | Stack                                                       |
+| ----------------- | ----------------------------------------------------------- |
+| **Framework**     | Next.js 16 (App Router, Server Components, Server Actions)  |
+| **Language**      | TypeScript                                                  |
+| **UI**            | Tailwind CSS, shadcn/ui, Radix UI, Lucide Icons             |
+| **State / Forms** | React Hook Form, Zod                                        |
+| **Charts / DnD**  | Recharts, dnd-kit                                           |
+| **Auth**          | `jose` (JWE), httpOnly session cookie, JWT refresh rotation |
+| **API Layer**     | Axios (server-side proxy → NestJS), Next.js Route Handlers  |
+| **AI / Copilot**  | CopilotKit v2, LangGraph (AG-UI protocol), OpenAI           |
+| **Security**      | Arcjet (shield, rate limit, bot detection)                  |
+| **Deploy**        | Vercel (Next.js), Render (Python Agent), Railway (NestJS)   |
 
-  components/
-    layout/               # Navbar, AppSidebar, DashboardLayout
-    books/                # Books dashboard, dialog, detail, promo…
-    categories/           # Category dashboard, folder, dialog…
-    orders/               # Orders dashboard, order cards, user orders…
-    users/                # User table, user info, actions, edit…
-    dashboard/            # Quick stats, recent activity, todo, chart…
-    action-ai/            # Hooks cho CopilotKit (tools, stats, todo…)
-    ui/                   # shadcn primitives: button, input, table, dialog…
+---
 
-  lib/
-    axios-server.ts       # Axios instance dùng session cookie -> NestJS
-    api-error.ts          # Chuẩn hóa lỗi từ NestJS
-    dal.ts                # Data access helpers (books, orders, categories)
-    session.ts            # JWT session + cookies
-    token.ts              # Decode JWT expiry
-    zod.ts                # Zod schemas (auth, books, categories, chapters, users)
-    types.ts              # Domain types
+## 🦄 Features
 
-  hooks/
-    use-mobile.ts         # Responsive helpers
-    useChapterStreaming.ts# Stream chương từ AI/BE
+- **📊 AI Dashboard**: Drag-and-drop stat cards; AI can update stats, reorder cards, and render charts via `updateDashboardStats` tool.
+- **📚 Book Management**: Full CRUD with paginated gallery, AI-powered search/filter (`filterBooks` tool), image upload to Cloudinary.
+- **✍️ AI Book Editor**: Multi-chapter editor with Markdown preview, AI writes/edits content in real time, Human-in-the-Loop approval for AI edits.
+- **📦 Order Management**: Paginated order list with status tracking (Pending → Shipped → Delivered).
+- **👥 User Management**: User table with role display (NORMAL / PREMIUM / ADMIN), edit and delete actions.
+- **🗂️ Category Management**: Category folders with book count and active rate progress bar.
+- **✅ AI Todo List**: Add, edit, delete, toggle todos via AI chat (`manageTodo` tool).
+- **🔐 Auth Flow**: Signin/Signup with JWT access token + refresh token rotation, automatic refresh in middleware before expiry.
+- **🛡️ Runtime Security**: Arcjet shield + bot detection on all routes; stricter rate limiting on auth routes.
+- **🌙 Dark Mode**: Full dark mode support via `next-themes`.
+
+---
+
+## 🤖 AI Agent Architecture
+
+The AI Copilot is powered by a **Python LangGraph agent** running on Render, connected to the Next.js frontend via the **AG-UI protocol** (`ag_ui_langgraph`).
+
+```
+Browser (CopilotKit UI)
+    ↓ POST /api/copilotkit
+Next.js Route Handler
+    ↓ LangGraphHttpAgent → AG-UI protocol
+Python FastAPI (Render)
+    ↓ LangGraph StateGraph
+    ├── call_model_node (OpenAI)
+    ├── write_chapter_node (AI Writer sub-agent)
+    ├── edit_chapter_content_node (Human-in-the-Loop)
+    ├── outline_node / edit_outline_node
+    ├── stats_nodes (get_overview_stats, etc.)
+    └── tavily_search / tavily_extract
 ```
 
-Chi tiết review cấu trúc & chất lượng code nằm trong `PROJECT_STRUCTURE_REVIEW.md`.
+---
+
+## 🔐 Auth & Security Flow
+
+```
+User signin
+  → NestJS returns { accessToken, refreshToken }
+  → decodeJwtExpiry(accessToken) → atExpiresAt
+  → Encrypt session (JWE) → httpOnly cookie
+
+Every protected request
+  → Middleware reads session cookie
+  → If atExpiresAt - now < 2min → POST /auth/refresh (rotate tokens)
+  → Update cookie with new tokens
+  → Forward request
+
+Role check
+  → session.user.role !== "ADMIN" → redirect /unauthorized
+  → /unauthorized → logoutAction → deleteSession → redirect /signin
+```
 
 ---
 
-## 2. Environment variables
+## 🚀 Getting Started
 
-Tạo file `.env.local` (không commit lên GitHub) với các biến sau:
+### Prerequisites
+
+- **Node.js** >= 18.x
+- **pnpm** (recommended) or npm
+- **NestJS backend** running → see [API-EBook](https://github.com/Hieuej147/ebook-api) for setup
+- **Python AI Agent** running (optional) → also in API-EBook repo under `ai-agent-python/`
+
+### Installation
+
+**1. Clone repository**
 
 ```bash
-# NestJS backend
-NESTJS_API_URL=https://your-nest-api.com
-
-# Session / JWT
-SESSION_SECRET_KEY=super-strong-random-secret-min-32-chars
-
-# Security / CORS
-ALLOWED_ORIGIN=https://your-frontend-domain.com
-
-# Arcjet (runtime security)
-ARCJET_KEY=ajkey_xxx  # Lấy từ dashboard Arcjet: https://arcjet.com/
+git clone https://github.com/Hieuej147/ebook-dashboard.git
+cd ebook-dashboard
 ```
 
-**Lưu ý bảo mật:**
-- Không prefix các biến nhạy cảm bằng `NEXT_PUBLIC_` (để chúng chỉ tồn tại trên server).
-- Không commit `.env*` lên GitHub (hãy đảm bảo `.gitignore` đã ignore).
-
----
-
-## 3. Chạy ứng dụng local
-
-### 3.1. Cài đặt dependencies
+**2. Install dependencies**
 
 ```bash
 pnpm install
-# hoặc
-npm install
 ```
 
-### 3.2. Chạy dev server
+**3. Setup environment variables**
+
+Create `.env.local` in the root:
+
+```env
+# NestJS Backend URL
+NESTJS_API_URL=your-nest-api
+
+# Session encryption key (min 32 chars)
+# Generate with: openssl rand -hex 32
+SESSION_SECRET_KEY=your-super-strong-random-secret-min-32-chars
+
+# CORS allowed origin
+ALLOWED_ORIGIN=your-frontend
+
+# Python AI Agent URL (Render)
+DEPLOYMENT_URL=your-agent
+
+# Arcjet runtime security key
+ARCJET_KEY=ajkey_xxx
+```
+
+**4. Start dev server**
 
 ```bash
 pnpm dev
-# hoặc
-npm run dev
 ```
 
-Mặc định app chạy tại `http://localhost:3000`.
+App runs at: **http://localhost:3001** if you run nestjs :3000
 
 ---
 
-## 4. Build & deploy
-
-### 4.1. Build production
+## 📖 Available Scripts
 
 ```bash
-pnpm build
-pnpm start
-```
-
-### 4.2. Deploy lên Vercel
-
-1. Push project lên GitHub (đảm bảo **không commit `.env.local`**).
-2. Trên Vercel:
-   - Import repo từ GitHub.
-   - Set environment variables trong tab **Environment Variables**:
-     - `NESTJS_API_URL`
-     - `SESSION_SECRET_KEY`
-     - `ALLOWED_ORIGIN`
-     - `ARCJET_KEY` (nếu dùng Arcjet)
-3. Deploy.
-
-### 4.3. Cloudflare phía trước (tùy chọn)
-
-Bạn có thể đặt Cloudflare trước Vercel để:
-- Cache static assets mạnh hơn.
-- Bật thêm WAF, bot protection.
-
-Đảm bảo:
-- Cloudflare không phá vỡ **cookies / headers** quan trọng (đặc biệt là `Set-Cookie`, `Authorization`).
-
----
-
-## 5. Security & runtime notes
-
-- **Auth & session**
-  - FE sử dụng httpOnly cookie `session` chứa JWT mã hóa (JWE) với `SESSION_SECRET_KEY`.
-  - `axiosServer` tự động đọc session từ cookie và attach `Authorization: Bearer <token>` khi gọi NestJS.
-  - NestJS chịu trách nhiệm validate token + role (ADMIN/USER).
-
-- **Next.js API routes (`src/app/api`)**
-  - Đa số chỉ đóng vai trò **proxy**:
-    - Check session (`getSession()`).
-    - Validate input bằng Zod (books, categories, chapters, users).
-    - Gọi NestJS bằng `axiosServer`.
-  - Không có logic nhạy cảm chạy trên client, chỉ trên server.
-
-- **Arcjet** (dự định dùng)
-  - Thêm rate limiting, bot detection, shield protection ở runtime.
-  - Xem docs: [`https://arcjet.com/`](https://arcjet.com/) và [`https://docs.arcjet.com/quickstart/nextjs`](https://docs.arcjet.com/quickstart/nextjs).
-
-Chi tiết rủi ro & checklist deploy nằm trong file `PROJECT_ANALYSIS_2.md`.
-
----
-
-## 6. Scripts hữu ích
-
-```bash
-pnpm dev       # Chạy dev server
-pnpm build     # Build production
-pnpm start     # Chạy production build
-pnpm lint      # Chạy ESLint
+pnpm dev        # Start dev server (Turbopack)
+pnpm build      # Build for production
+pnpm start      # Start production build
+pnpm lint       # Run ESLint
 ```
 
 ---
 
-## 7. Những việc nên double-check trước khi deploy
+## 🌐 Deployment
 
-- [ ] `.env.local` đầy đủ, **không commit lên GitHub**.
-- [ ] `SESSION_SECRET_KEY` đủ dài/ngẫu nhiên (ít nhất 32 ký tự).
-- [ ] `NESTJS_API_URL` trỏ tới backend production (không còn `localhost`).
-- [ ] `ALLOWED_ORIGIN` trỏ tới domain thật (không để mặc định `http://localhost:3001`).
-- [ ] Đã bật `NODE_ENV=production` khi build (Vercel tự set).
-- [ ] Không còn `console.log` nhạy cảm trong `src/lib/token.ts` (log token).
-- [ ] Đã test signin/signup, dashboard, AI actions trên môi trường staging/preview.
+### Vercel (Next.js)
+
+```
+1. Push to GitHub
+2. Import repo on vercel.com → auto-detects Next.js
+3. Set environment variables:
+   - NESTJS_API_URL
+   - SESSION_SECRET_KEY
+   - ALLOWED_ORIGIN
+   - DEPLOYMENT_URL
+   - ARCJET_KEY
+4. Deploy → auto-redeploy on every git push ✅
+```
 
 ---
 
-## 8. Tài liệu thêm
 
-- `PROJECT_STRUCTURE_REVIEW.md` – review cấu trúc + performance + refactor đề xuất.
-- `PROJECT_ANALYSIS_2.md` – phân tích bảo mật & deployment chi tiết.
+## 🔄 What I Learned
 
+- **Next.js App Router patterns**: Server Components for data fetching, Route Handlers as secure proxies, Server Actions for mutations.
+- **CopilotKit + LangGraph integration**: AG-UI protocol, `useCoAgent` shared state, `useFrontendTool`, `useHumanInTheLoop`, `useLangGraphInterrupt`.
+- **Auth architecture**: httpOnly JWE session cookies, silent token refresh in middleware, role-based redirects without client-side exposure.
+- **Performance optimization**: `useMemo`/`useCallback` to prevent unnecessary re-renders, `useRef` for non-visual state (typing buffer, agent flags), debounced AI state sync.
+- **Security hardening**: Arcjet integration, Zod validation on all mutation routes, `isRedirectError` handling in error boundaries.
+
+
+---
+
+## 📝 License
+
+This project is **UNLICENSED** — for educational and portfolio purposes.
+
+---
+
+## 👨‍💻 Author
+
+**Hieu Dev**
+
+- GitHub: [@Hieuej147](https://github.com/Hieuej147)
+- Backend Repo: [API-EBook](https://github.com/Hieuej147/ebook-api)
+
+---
+
+<div align="center">
+  <sub>Built with ❤️ using Next.js, CopilotKit, and LangGraph</sub>
+</div>
