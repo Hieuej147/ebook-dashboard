@@ -187,6 +187,9 @@ pnpm lint       # Run ESLint
 
 ---
 
+[Download Demo Video](./public/output-small.mp4)
+
+---
 ## 📝 License
 
 This project is **UNLICENSED** — for educational and portfolio purposes.
