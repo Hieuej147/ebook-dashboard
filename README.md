@@ -189,7 +189,7 @@ pnpm lint       # Run ESLint
 
 ## 🎬 Demo
 
-<video src="./assets/output-small.mp4" controls width="100%"></video>
+<video src="./assets/output.mp4" controls width="100%"></video>
 
 ---
 ## 📝 License
