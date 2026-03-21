@@ -76,7 +76,7 @@ const Navbar = () => {
                 variant="destructive"
                 onClick={() => logoutAction()}
               >
-                <LogOut className="h-[1.2rm] w-[1.2rem] mr-2" /> Logout
+                <LogOut className="h-[1.2rm] w-[1.2rem] mr-2" /> Sign out
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

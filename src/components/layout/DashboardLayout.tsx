@@ -29,7 +29,7 @@ interface LayoutProps {
   defaultOpen: boolean;
 }
 
-export function EBookLayout({ children, defaultOpen }: LayoutProps) {
+export function EAdminLayout({ children, defaultOpen }: LayoutProps) {
   const { state, setState } = useLangChainAgent();
   const router = useRouter();
   useCoAgentStateRender<AgentState>({

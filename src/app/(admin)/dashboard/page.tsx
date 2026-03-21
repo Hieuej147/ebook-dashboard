@@ -48,7 +48,7 @@ const DEFAULT_CHARTS: Charts = {
   books_chart: [30, 50, 25, 60, 40].map((v) => ({ date: "", value: v })),
 };
 
-// ✅ CARD_MAP ngoài component — không bao giờ re-create
+
 const CARD_MAP: Record<string, React.ReactNode> = {
   "card-books": <CardBooks />,
   "card-orders": <CardOrder />,
@@ -178,7 +178,6 @@ export default function DashboardPage() {
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 <div className="flex flex-col gap-4">
                   {leftCards.map((id) => (
-                    // ✅ disabled khi chưa mounted — không unmount/remount
                     <DraggableCard key={id} id={id} disabled={!mounted}>
                       {CARD_MAP[id]}
                     </DraggableCard>

@@ -39,17 +39,19 @@ const ChapterEditTab = ({
     }
     prevGenerating.current = isGenerating;
   }, [isGenerating, chapter?.content]);
+  useEffect(() => {
+    if (!isGenerating) {
+      setLocalText(chapter?.content || "");
+    }
+  }, [chapter?.content]);
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setLocalText(e.target.value);
+    onContentChange?.(e.target.value); // ✅ sync ngay
   };
-  const handleBlur = () => {
-    if (localText !== chapter?.content) {
-      onContentChange?.(localText);
-    }
-  };
+
   return (
     <div className="h-full w-full flex flex-col bg-primary-foreground">
-      {/* VÙNG SOẠN THẢO (EDITOR) */}
+      {/* (EDITOR) */}
       <div className="flex-1 flex flex-col relative overflow-hidden">
         {isGenerating && (
           <div className="absolute inset-0 bg-white/60 backdrop-blur-sm z-10 flex items-center justify-center">
@@ -67,7 +69,6 @@ const ChapterEditTab = ({
         <textarea
           value={localText}
           onChange={handleChange}
-          onBlur={handleBlur}
           readOnly={isGenerating}
           placeholder={
             isGenerating
@@ -77,7 +78,7 @@ const ChapterEditTab = ({
           className="flex-1 w-full p-8 md:p-16 resize-none outline-none text-lg leading-loose font-serif bg-transparent overflow-y-auto"
         />
 
-        {/* Chỉ dẫn ẩn hiện khi hover */}
+        {/* hover */}
         <div className="absolute bottom-4 left-8 text-[10px] text-slate-300 uppercase tracking-widest font-bold">
           {isFullScreen ? "Zen Mode Active" : "Markdown Supported"}
         </div>
@@ -97,9 +98,11 @@ const ChapterViewTab = ({
   title: string;
 }) => {
   return (
-    <div className="h-full w-full bg-white overflow-y-auto p-8 md:p-16">
-      <article className="prose prose-slate lg:prose-xl max-w-4xl mx-auto font-serif">
-        <h1 className="text-4xl font-black mb-8 border-b pb-4">{title}</h1>
+    <div className="h-full w-full bg-primary-foreground overflow-y-auto p-8 md:p-16">
+      <article className="prose prose-slate lg:prose-xl max-w-4xl mx-auto font-serif dark:prose-invert">
+        <h1 className="text-4xl font-black mb-8 border-b pb-4 text-primary">
+          {title}
+        </h1>
         <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
       </article>
     </div>

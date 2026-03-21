@@ -34,7 +34,7 @@ const BookDetailPage = async ({
     // Các lỗi khác thì báo lỗi hệ thống
     return (
       <div className="p-10 text-rose-500 font-semibold bg-rose-50 rounded-xl m-4">
-        ❌ Lỗi: Không thể kết nối với máy chủ (Code:{" "}
+        ❌ Error: Unable to connect to the server (Code:{" "}
         {error.response?.status || "500"})
       </div>
     );

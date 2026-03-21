@@ -100,63 +100,10 @@ export async function signinAction(
   }
 }
 
-// const globalRef = global as unknown as {
-//   refreshPromise: Promise<string | null> | null;
-// };
-// export const refreshToken = async (oldRefreshToken: string) => {
-//   if (globalRef.refreshPromise) {
-//     console.log("⏳ Dùng chung Promise refresh đang chạy...");
-//     return globalRef.refreshPromise;
-//   }
-//   globalRef.refreshPromise = (async () => {
-//     try {
-//       const response = await fetch(
-//         `${process.env.NESTJS_API_URL}/auth/refresh`,
-//         {
-//           method: "POST",
-//           headers: {
-//             "Content-Type": "application/json",
-//             Authorization: `Bearer ${oldRefreshToken}`,
-//           },
-//         },
-//       );
 
-//       if (!response.ok) {
-//         return null;
-//       }
-
-//       const { accessToken, refreshToken } = await response.json();
-//       // update session with new tokens
-//       const updateRes = await fetch(
-//         `${process.env.NESTJS_API_URL_PUBLIC}/api/auth/update`,
-//         {
-//           method: "POST",
-//           body: JSON.stringify({
-//             accessToken,
-//             refreshToken,
-//           }),
-//         },
-//       );
-
-//       if (updateRes.ok) {
-//         console.log("updated success");
-//       } else {
-//         console.log("updated Failed");
-//       }
-//       return accessToken;
-//     } catch (err) {
-//       console.error("❌ Refresh Token failed:", err);
-//       return null;
-//     } finally {
-//       globalRef.refreshPromise = null;
-//     }
-//   })();
-//   return globalRef.refreshPromise;
-// };
 export async function logoutAction() {
   const session = await getSession();
 
-  // ✅ Gọi NestJS logout để xóa refreshToken trong DB
   if (session?.accessToken) {
     try {
       await fetch(`${process.env.NESTJS_API_URL}/auth/logout`, {
@@ -168,7 +115,6 @@ export async function logoutAction() {
       });
     } catch (error) {
       console.error("NestJS logout failed:", error);
-      // ✅ Dù NestJS lỗi vẫn xóa session FE
     }
   }
 

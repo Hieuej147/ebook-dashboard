@@ -1,4 +1,3 @@
-// app/dashboard/books/page.tsx
 import BooksDashboardClient from "@/components/books/BooksDashboardClient";
 import { getAdminBooks, getAllcategories, getCategoriesList } from "@/lib/dal";
 
@@ -9,19 +8,18 @@ export default async function BooksPage({
 }) {
   const params = await searchParams;
 
-  // 1. Chuẩn hóa filter từ URL
   const filters = {
     page: Number(params.page) || 1,
     limit: 12,
     search: (params.search as string) || "",
     category: (params.category as string) || "",
-    isActive: params.isActive !== "false", // mặc định true
+    isActive: params.isActive !== "false",
   };
 
-  // 2. Fetch dữ liệu song song tại Server
+  // fetch parallel
   const [booksData, categoriesData, categoriesRes] = await Promise.all([
     getAdminBooks(filters),
-    getAllcategories({ page: 1, limit: 20 }), // Sidebar lấy 20 cái đầu
+    getAllcategories({ page: 1, limit: 20 }),
     getCategoriesList(),
   ]);
 

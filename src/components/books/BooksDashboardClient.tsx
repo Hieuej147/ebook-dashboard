@@ -28,13 +28,11 @@ export default function BooksDashboardClient({
   const pathname = usePathname();
   const [isPending, startTransition] = useTransition();
 
-  // --- STATE CHỈ GIỮ LẠI CÁI CẦN THIẾT CHO UI ---
   const [searchTerm, setSearchTerm] = useState(currentFilters.search || "");
   const [SelectedBookID, setSelectedBookID] = useState<null | string>(null);
-  const searchParams = useSearchParams(); // Dùng hook chuẩn của Next
+  const searchParams = useSearchParams();
   const [isSheetOpen, setIsSheetOpen] = useState(false);
 
-  // --- HÀM PROXY URL (THAY THẾ CHO FETCH) ---
   const updateQuery = useCallback(
     (newParams: Record<string, any>) => {
       startTransition(() => {
@@ -118,7 +116,7 @@ export default function BooksDashboardClient({
                 ))
               ) : (
                 <div className="col-span-full py-20 text-center text-slate-400">
-                  Không tìm thấy sách nào.
+                  No found of books.
                 </div>
               )}
             </div>

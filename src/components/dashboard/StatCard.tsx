@@ -41,7 +41,7 @@ export const StatCard = ({
 
   return (
     <Card className="rounded-2xl p-4 shadow-sm border flex flex-col justify-between min-h-[220px]">
-      {/* Phần trên: Title và Icon */}
+      {/* Title và Icon */}
       <CardHeader className="flex justify-between items-center">
         <CardTitle className="space-y-4">
           <p className="text-muted-foreground font-medium text-sm">{title}</p>
@@ -65,7 +65,7 @@ export const StatCard = ({
         </div>
       </CardHeader>
 
-      {/* Phần dưới: Biểu đồ Mini */}
+      {/* Biểu đồ Mini */}
       <div className="h-12 w-full mt-4">
         <ChartContainer config={chartConfig} className="h-full w-full">
           <ResponsiveContainer width="100%" height="100%">

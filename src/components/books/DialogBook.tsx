@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Dialog,
   DialogClose,
@@ -33,6 +33,8 @@ import { useRouter } from "next/navigation";
 import { z } from "zod";
 import { useHumanInTheLoop, ToolCallStatus } from "@copilotkit/react-core/v2";
 import { useLangChainAgent } from "@/app/provider/AgentContext";
+import { ReviewForm } from "../action-ai/ReviewForm";
+import { toast } from "sonner";
 
 const styleItems = [
   { label: "Informative", value: "informative" },
@@ -41,185 +43,6 @@ const styleItems = [
   { label: "Professional", value: "professional" },
   { label: "Humorous", value: "humorous" },
 ];
-
-function ChatFillForm() {
-  const { state, setState, running: isRunning, nodeName } = useLangChainAgent();
-  useHumanInTheLoop(
-    {
-      name: "collectInformationBookOutline",
-      description:
-        "Collect shipping book outline from the user before placing an order",
-      parameters: z.object({
-        suggestedTitle: z
-          .string()
-          .optional()
-          .describe("A title suggested by AI based on context"),
-        suggestedAuthor: z.string().optional(),
-      }),
-      render: ({ args, status, respond }) => {
-        // Form này sẽ hiện ngay trong bong bóng chat của Assistant
-        const [formData, setFormData] = useState({
-          title: args.suggestedTitle || "",
-          author: args.suggestedAuthor || "",
-          topic: "",
-          chapters: 3,
-        });
-
-        if (status === ToolCallStatus.Executing && respond) {
-          return (
-            <div className="p-4 border border-purple-200 rounded-xl bg-white shadow-sm space-y-3 my-2 animate-in fade-in slide-in-from-bottom-2">
-              <h4 className="text-sm font-bold text-purple-700 flex items-center gap-2">
-                <Plus size={14} /> Quick Book Setup
-              </h4>
-
-              <div className="space-y-2">
-                <input
-                  placeholder="Book Title"
-                  className="w-full text-xs p-2 border rounded-md focus:ring-1 ring-purple-500 outline-none"
-                  value={formData.title}
-                  onChange={(e) =>
-                    setFormData({ ...formData, title: e.target.value })
-                  }
-                />
-                <input
-                  placeholder="Author Name"
-                  className="w-full text-xs p-2 border rounded-md focus:ring-1 ring-purple-500 outline-none"
-                  value={formData.author}
-                  onChange={(e) =>
-                    setFormData({ ...formData, author: e.target.value })
-                  }
-                />
-                <div className="flex gap-2">
-                  <input
-                    type="number"
-                    placeholder="Chapters"
-                    className="w-20 text-xs p-2 border rounded-md outline-none"
-                    value={formData.chapters}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        chapters: Number(e.target.value),
-                      })
-                    }
-                  />
-                  <select
-                    className="flex-1 text-xs p-2 border rounded-md outline-none"
-                    onChange={(e) =>
-                      setFormData({ ...formData, topic: e.target.value })
-                    }
-                  >
-                    <option value="General">Topic: General</option>
-                    <option value="Technology">Technology</option>
-                    <option value="Story">Storytelling</option>
-                  </select>
-                </div>
-              </div>
-
-              <Button
-                size="sm"
-                className="w-full bg-purple-600 hover:bg-purple-700 h-8 text-xs"
-                onClick={() => {
-                  // 1. Cập nhật State chung để Dialog (thủ công) cũng nhận được
-                  setState({
-                    ...state,
-                    book: {
-                      ...state?.book,
-                      title: formData.title,
-                      author: formData.author,
-                      topic: formData.topic,
-                      chapters: [], // Reset để chuẩn bị gen mới
-                    },
-                  });
-
-                  // 2. Trả kết quả về cho AI để nó biết đã điền xong
-                  respond(formData);
-                }}
-              >
-                Apply to Draft
-              </Button>
-            </div>
-          );
-        }
-
-        if (status === ToolCallStatus.Complete) {
-          return (
-            <div className="p-2 text-xs text-slate-500 italic">
-              ✓ Details applied to your book draft.
-            </div>
-          );
-        }
-        return null;
-      },
-    },
-    [],
-  );
-
-  return null;
-}
-
-function ChatApprovalTool({
-  setIsOpen,
-  setSteps,
-}: {
-  setIsOpen: (open: boolean) => void;
-  setSteps: (step: number) => void;
-}) {
-  useHumanInTheLoop(
-    {
-      name: "approve_and_save_book_chat",
-      description:
-        "Call this to let the user review the generated outline in the main Dialog before finalizing.",
-      parameters: z.object({
-        title: z.string().describe("The final title of the book"),
-        chapterCount: z.number().describe("Total number of chapters generated"),
-      }),
-      render: ({ args, status, respond }) => {
-        if (status === ToolCallStatus.Executing && respond) {
-          return (
-            <div className="p-4 border-2 border-blue-200 rounded-xl bg-blue-50/30 space-y-3 my-2 animate-in zoom-in-95">
-              <h4 className="font-bold text-sm text-blue-700">
-                Outline Ready! 📝
-              </h4>
-              <p className="text-xs text-slate-600">
-                Dàn ý cho <strong>"{args.title}"</strong> đã xong. Bạn có muốn
-                xem lại trong Dialog để tùy chỉnh và lưu không?
-              </p>
-
-              <div className="flex gap-2">
-                <Button
-                  size="sm"
-                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white h-8 text-xs font-semibold"
-                  onClick={() => {
-                    // 1. Bật Dialog và nhảy thẳng tới bước Review
-                    setIsOpen(true);
-                    setSteps(2);
-
-                    // 2. Báo AI là người dùng đã đồng ý xem
-                    respond({ action: "review_in_dialog" });
-                  }}
-                >
-                  Review in Dialog
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="flex-1 h-8 text-xs"
-                  onClick={() => respond({ action: "cancel" })}
-                >
-                  Not now
-                </Button>
-              </div>
-            </div>
-          );
-        }
-        return null;
-      },
-    },
-    [],
-  );
-
-  return null;
-}
 
 export default function DialogBook() {
   const { state, setState, running, nodeName } = useCoAgent<AgentState>({
@@ -236,14 +59,23 @@ export default function DialogBook() {
     },
   });
   const [steps, setSteps] = useState(1);
-  const [isOpen, setIsOpen] = useState(false); // Thêm state để AI có thể mở Dialog
+  const [isOpen, setIsOpen] = useState(false);
   const [writingStyle, setWritingStyle] = useState("informative");
   const [isSaving, setIsSaving] = useState(false);
   const [authorName, setAuthorName] = useState("");
   const [localChapterCount, setLocalChapterCount] = useState(3);
+  const [selectedCategoryId, setSelectedCategoryId] = useState("");
+  const [categories, setCategories] = useState([]);
   const router = useRouter();
   const { appendMessage } = useCopilotChat();
   const chapters = state?.book?.chapters || [];
+  useEffect(() => {
+    if (isOpen && categories.length === 0) {
+      fetch("/api/category/list")
+        .then((r) => r.json())
+        .then((d) => setCategories(Array.isArray(d) ? d : d.data || []));
+    }
+  }, [isOpen]);
 
   const updateBookField = (field: string, value: any) => {
     setState({
@@ -306,7 +138,7 @@ export default function DialogBook() {
         price: 19.99,
         stock: 1,
         sku: `BK-${Date.now()}`,
-        categoryId: "8c3d5ebf-f4be-4f4c-bc17-d84e8a457c82",
+        categoryId: selectedCategoryId,
       };
 
       const Bookres = await fetch("/api/books", {
@@ -317,6 +149,7 @@ export default function DialogBook() {
 
       if (!Bookres.ok) throw new Error("Failed to create book");
       const book = await Bookres.json();
+      if (!book.id) throw new Error("Book ID is null");
       const chaptersPayload = {
         chapters: chapters.map((ch: any) => ({
           title: ch.title,
@@ -335,15 +168,46 @@ export default function DialogBook() {
       router.push(`/dashboard/books/${book.id}/chapters`);
     } catch (error) {
       console.error("Error creating book and chapters:", error);
+      toast.error(`Something wrong: ${error}`);
     } finally {
       setIsSaving(false);
     }
   };
+  const handleAddChapter = () => {
+    const newChapter = {
+      chapterNumber: chapters.length + 1,
+      title: `Chapter ${chapters.length + 1}`,
+      description: "New chapter description",
+      content: "",
+    };
 
+    setState({
+      ...state,
+      book: {
+        ...state?.book,
+        chapters: [...chapters, newChapter],
+      },
+    });
+  };
+  const handleDeleteChapter = (index: number) => {
+    const newChapters = chapters
+      .filter((_: any, i: number) => i !== index)
+      .map((ch: any, i: number) => ({
+        ...ch,
+        chapterNumber: i + 1,
+      }));
+
+    setState({
+      ...state,
+      book: {
+        ...state?.book,
+        chapters: newChapters,
+      },
+    });
+  };
   return (
     <>
-      <ChatFillForm />
-      <ChatApprovalTool setIsOpen={setIsOpen} setSteps={setSteps} />
+      <ReviewForm setIsOpen={setIsOpen} setSteps={setSteps} />
       <Dialog
         open={isOpen}
         onOpenChange={(open) => {
@@ -433,6 +297,26 @@ export default function DialogBook() {
                       placeholder="e.g. Technology and Ethics"
                     />
                   </Field>
+                  <Field>
+                    <Label>Category</Label>
+                    <Select
+                      value={selectedCategoryId}
+                      onValueChange={setSelectedCategoryId}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="choose genre..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectGroup>
+                          {categories.map((cat: any) => (
+                            <SelectItem key={cat.id} value={cat.id}>
+                              {cat.name}
+                            </SelectItem>
+                          ))}
+                        </SelectGroup>
+                      </SelectContent>
+                    </Select>
+                  </Field>
                 </FieldGroup>
                 <DialogFooter>
                   <DialogClose asChild>
@@ -481,6 +365,7 @@ export default function DialogBook() {
                           <button
                             type="button"
                             className="absolute right-3 top-4 text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={() => handleDeleteChapter(index)}
                           >
                             <Trash2 className="h-4 w-4" />
                           </button>
@@ -514,6 +399,7 @@ export default function DialogBook() {
                       variant="secondary"
                       className="flex gap-2"
                       type="button"
+                      onClick={handleAddChapter}
                     >
                       <Plus className="h-4 w-4" />
                       Add Chapter

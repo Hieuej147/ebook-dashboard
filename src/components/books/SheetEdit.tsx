@@ -32,7 +32,7 @@ import {
   HoverCardContent,
   HoverCardTrigger,
 } from "@/components/ui/hover-card";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { ImageIcon, Loader2, ZoomIn } from "lucide-react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
@@ -140,9 +140,9 @@ export function EditBookID({
     }
   };
 
-  const handleEditChapters = () => {
+  const handleEditChapters = useCallback(() => {
     router.push(`/dashboard/books/${id}/chapters`);
-  };
+  }, [id]);
 
   return (
     <Sheet onOpenChange={onOpenChange} open={open}>
@@ -415,7 +415,7 @@ export function EditBookID({
                                     alt="Large preview"
                                     className="w-full h-full object-cover animate-in fade-in zoom-in duration-200"
                                   />
-                                  <div className="absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-black/60 to-transparent">
+                                  <div className="absolute bottom-0 left-0 right-0 p-2 bg-linear-to-t from-black/60 to-transparent">
                                     <p className="text-[10px] text-white font-medium">
                                       Cover Preview
                                     </p>

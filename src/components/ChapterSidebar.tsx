@@ -134,6 +134,7 @@ interface ChapterSidebarProps {
   onGenerateChapterContent: (index: number) => Promise<void>;
   onAddChapter: () => void;
   isGenerating: boolean;
+  isModifyingChapters?: boolean;
 }
 
 const ChapterSidebar = memo(
@@ -145,6 +146,7 @@ const ChapterSidebar = memo(
     onAddChapter,
     onGenerateChapterContent,
     isGenerating,
+    isModifyingChapters,
   }: ChapterSidebarProps) => {
     const sensors = useSensors(
       useSensor(PointerSensor),
@@ -218,23 +220,33 @@ const ChapterSidebar = memo(
             </DndContext>
           </div>
         </ScrollArea>
-        <div className="p-4 border-t shrink-0 bg-white">
+        <div className="p-4 border-t shrink-0 bg-primary-foreground">
           <Button
             variant="secondary"
             onClick={onAddChapter}
             disabled={isGenerating}
             className="w-full flex items-center gap-2"
           >
-            {isGenerating ? (
-              <Loader2 className="h-4 w-4 animate-spin text-purple-600" />
+            {isModifyingChapters ? ( // ✅ thêm case này
+              <>
+                <Loader2 className="h-4 w-4 animate-spin text-purple-600" />
+                <span className="text-purple-600 font-semibold">
+                  Updating outline...
+                </span>
+              </>
+            ) : isGenerating ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin text-purple-600" />
+                <span className="text-purple-600 font-semibold">
+                  Generating...
+                </span>
+              </>
             ) : (
-              <Plus className="h-4 w-4" />
+              <>
+                <Plus className="h-4 w-4" />
+                <span>New Chapter</span>
+              </>
             )}
-            <span
-              className={isGenerating ? "text-purple-600 font-semibold" : ""}
-            >
-              {isGenerating ? "Generating new chapter..." : "New Chapter"}
-            </span>
           </Button>
         </div>
       </aside>
