@@ -157,24 +157,6 @@ pnpm lint       # Run ESLint
 
 ---
 
-## 🌐 Deployment
-
-### Vercel (Next.js)
-
-```
-1. Push to GitHub
-2. Import repo on vercel.com → auto-detects Next.js
-3. Set environment variables:
-   - NESTJS_API_URL
-   - SESSION_SECRET_KEY
-   - ALLOWED_ORIGIN
-   - DEPLOYMENT_URL
-   - ARCJET_KEY
-4. Deploy → auto-redeploy on every git push ✅
-```
-
----
-
 
 ## 🔄 What I Learned
 
