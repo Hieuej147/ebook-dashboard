@@ -30,7 +30,6 @@ Right column (fixed): card-orders, card-quickstats, card-activity
 Only change the order WITHIN each column. Do NOT move cards between columns.`,
       parameters: CardLayoutSchema,
       handler: async (args) => {
-        // ✅ Merge 2 cột thành 1 array theo kiểu xen kẽ
         const merged: string[] = [];
         const maxLen = Math.max(
           args.left_column.length,

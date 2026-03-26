@@ -162,3 +162,37 @@
 .diff-removed {
   @apply text-red-400 opacity-50 decoration-red-400;
 }
+
+.dark .copilotKitSidebarHeader {
+  background-color: #1e293b !important;
+  border-bottom: 1px solid #334155 !important;
+}
+
+.dark .copilotKitSidebarHeader h1,
+.dark .copilotKitSidebarHeader div,
+.dark .copilotKitSidebarHeader span {
+  color: #f8fafc !important;
+}
+
+.dark .copilotKitSidebarHeader svg {
+  color: #cbd5e1 !important;
+}
+
+.dark .copilotKitButton {
+  background-color: #1e293b !important;
+  color: #f8fafc !important;
+  border: 1px solid #334155 !important;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5) !important;
+}
+.dark .copilotKitButton:hover {
+  background-color: #334155 !important;
+}
+
+.dark .copilotKitInput {
+  background-color: #1e293b !important;
+  border-top: 1px solid #334155 !important;
+}
+.dark .copilotKitInput textarea {
+  color: #f8fafc !important;
+  background-color: transparent !important;
+}

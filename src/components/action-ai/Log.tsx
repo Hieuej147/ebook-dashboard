@@ -28,7 +28,7 @@ export function Progress({
           >
             <div className="w-8">
               <div
-                className="w-4 h-4 border border-border bg-white flex items-center justify-center rounded-full mt-[10px] ml-[12px]"
+                className="w-4 h-4 border border-border bg-primary-foreground flex items-center justify-center rounded-full mt-[10px] ml-[12px]"
                 data-test-id={
                   log.done
                     ? "progress-step-item_done"

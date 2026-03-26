@@ -31,7 +31,6 @@ export const AgentProvider = memo(
       },
     });
 
-    // ✅ Dùng useMemo để value không tạo object mới mỗi render
     const value = React.useMemo(
       () => ({
         state: coAgentState,

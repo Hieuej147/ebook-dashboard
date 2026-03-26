@@ -16,13 +16,11 @@ import { AgentState } from "@/lib/types";
 import { Progress } from "../action-ai/Log";
 import "@copilotkit/react-core/v2/styles.css";
 import { useLangChainAgent } from "@/app/provider/AgentContext";
-import { CopilotPopup, CopilotSidebar } from "@copilotkit/react-ui";
-// import {
-//   useOrderStatsRender,
-//   useOverviewStatsRender,
-//   useRevenueStatsRender,
-//   useUserStatsRender,
-// } from "./action-ai/useStatsRender.tsx";
+import { CopilotSidebar } from "@copilotkit/react-ui";
+// import { CopilotSidebar } from "@copilotkit/react-core/v2";
+// import "@copilotkit/react-core/v2/styles.css";
+import { BookAgentSuggestions } from "@/hooks/useSuggestions";
+import AdminChatSidebar from "../CustomeSideChat";
 
 interface LayoutProps {
   children: ReactNode;
@@ -68,7 +66,7 @@ export function EAdminLayout({ children, defaultOpen }: LayoutProps) {
 
       // Special logic for editing a book if an ID is provided
       if (section === "books" && bookId) {
-        targetPath = `/edit/${bookId}`;
+        targetPath = `dashboard/books/${bookId}/chapters`;
       }
 
       if (targetPath) {
@@ -90,16 +88,8 @@ export function EAdminLayout({ children, defaultOpen }: LayoutProps) {
             <Toaster />
           </main>
         </SidebarProvider>
-        <CopilotSidebar
-          onSubmitMessage={async (message) => {
-            setState({ ...state, logs: [] });
-            await new Promise((resolve) => setTimeout(resolve, 30));
-          }}
-          defaultOpen={false}
-          labels={{
-            initial: "Hi! How can I assist you with your research today?",
-          }}
-        />
+        <BookAgentSuggestions />
+        <AdminChatSidebar />
       </div>
     </>
   );
