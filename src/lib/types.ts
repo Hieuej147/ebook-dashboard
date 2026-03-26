@@ -31,7 +31,7 @@ export interface Log {
 
 export interface Book {
   title: string;
-  author?: string; // Thêm author cho khớp với Python
+  author?: string;
   topic: string;
   writingStyle?: string;
   chapters: Chapter[];
@@ -41,14 +41,12 @@ export interface Source {
   url: string;
   title: string;
   content: string;
-  raw_content?: string; // Thêm trường này cho extract_node
+  raw_content?: string;
   score?: number;
 }
 
 export type Sources = Record<string, Source>;
 
-// Hợp nhất BookState vào AgentState. CopilotKit sẽ tự động
-// inject thêm mảng 'messages' vào state này ở phía dưới
 export interface AgentState {
   book: Book;
   sources: Sources;
