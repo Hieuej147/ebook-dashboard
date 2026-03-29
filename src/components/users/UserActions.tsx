@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Loader2, AlertTriangle } from "lucide-react";
 import { useState } from "react";
+import { apiFetch } from "@/lib/api-fetch";
 interface ConfirmModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -45,18 +46,16 @@ export const UserActions = ({ userId, email }: UserActionsProps) => {
 
   const handleDelete = async () => {
     try {
-      // Gọi qua Route Handler (Proxy) để bảo mật Token
-      const res = await fetch(`/api/users/${userId}`, {
-        method: "DELETE",
-      });
+      const res = await apiFetch(`/api/users/${userId}`, { method: "DELETE" });
 
       if (res.ok) {
         toast.success("Success deleted!");
-        router.refresh(); // Kích hoạt Server Component fetch lại data
+        router.refresh(); 
       } else {
         toast.error("Unathentication");
       }
-    } catch (error) {
+    } catch (error: any) {
+      if (error?.message === "UNAUTHORIZED") return;
       toast.error("Error connected");
     }
   };

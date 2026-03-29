@@ -37,6 +37,7 @@ import { ImageIcon, Loader2, ZoomIn } from "lucide-react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { Form } from "../ui/form";
+import { apiFetch } from "@/lib/api-fetch";
 
 interface Category {
   id: string;
@@ -79,7 +80,7 @@ export function EditBookID({
       const fetchData = async () => {
         setIsFetching(true);
         try {
-          const res = await fetch(`/api/books/${id}`);
+          const res = await apiFetch(`/api/books/${id}`);
           const data = await res.json();
           const foundcategory = categories.find(
             (c) => c.name === data.category,
@@ -90,9 +91,10 @@ export function EditBookID({
           };
           // Reset form with data from API
           form.reset(formatData);
-        } catch (error) {
-          console.error("Error loading book info:", error);
-          toast.error("Failed to load book data.");
+        } catch (error: any) {
+          if (error?.message === "UNAUTHORIZED") return;
+          console.error("Error creating book and chapters:", error);
+          toast.error(`Something wrong: ${error}`);
         } finally {
           setIsFetching(false);
         }
@@ -120,7 +122,7 @@ export function EditBookID({
         formData.append("image", values.imageUrl);
       }
 
-      const response = await fetch(`/api/books/${id}`, {
+      const response = await apiFetch(`/api/books/${id}`, {
         method: "PATCH",
         body: formData,
       });
@@ -133,8 +135,10 @@ export function EditBookID({
       } else {
         toast.error(`Update Failed: ${data.message}`);
       }
-    } catch (error) {
-      toast.error("Connection error");
+    } catch (error: any) {
+      if (error?.message === "UNAUTHORIZED") return;
+      console.error("Error creating book and chapters:", error);
+      toast.error(`Something wrong: ${error}`);
     } finally {
       setIsSubmitting(false);
     }

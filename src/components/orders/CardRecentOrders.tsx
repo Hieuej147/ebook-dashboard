@@ -11,6 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { OrderRow } from "./OrderRow";
+import { apiFetch } from "@/lib/api-fetch";
 
 type Order = {
   id: string;
@@ -23,10 +24,13 @@ export default function CardOrder() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("/api/orders/admin/all?page=1&limit=5")
+    apiFetch("/api/orders/admin/all?page=1&limit=5")
       .then((r) => r.json())
       .then((data) => setOrders(data.data || []))
-      .catch(console.error)
+      .catch((e) => {
+        if (e?.message === "UNAUTHORIZED") return;
+        console.error(e);
+      })
       .finally(() => setLoading(false));
   }, []);
 

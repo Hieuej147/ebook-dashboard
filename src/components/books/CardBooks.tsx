@@ -7,6 +7,8 @@ import DialogBook from "./DialogBook";
 import { useBookFiltersTool_HumanLoop } from "../action-ai/useBookFiltersTool";
 import { Loader2 } from "lucide-react";
 import { EditBookID } from "./SheetEdit";
+import { apiFetch } from "@/lib/api-fetch";
+import { toast } from "sonner";
 
 type Book = {
   id: string;
@@ -43,18 +45,20 @@ export default function CardBooks() {
       if (f.status)
         params.set("isActive", f.status === "PUBLISHED" ? "true" : "false");
 
-      const res = await fetch(`/api/books/admin/all?${params.toString()}`);
+      const res = await apiFetch(`/api/books/admin/all?${params.toString()}`);
       const data = await res.json();
       setBooks(data.data || []);
-    } catch (e) {
+    } catch (e: any) {
+      if (e?.message === "UNAUTHORIZED") return;
       console.error("Failed to fetch books:", e);
+      toast.error("Không thể tải danh sách sách");
     } finally {
       setLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    fetch("/api/category/list")
+    apiFetch("/api/category/list")
       .then((r) => r.json())
       .then((d) => {
         const list = Array.isArray(d) ? d : d.data || [];

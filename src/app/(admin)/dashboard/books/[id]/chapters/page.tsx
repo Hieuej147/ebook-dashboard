@@ -18,6 +18,7 @@ import "@copilotkit/react-core/v2/styles.css";
 import { useLangChainAgent } from "@/app/provider/AgentContext";
 import { EditApprovalCard } from "@/components/action-ai/EditApprovalCard";
 import { EditorHeader } from "@/components/chapters/EditorHeader";
+import { apiFetch } from "@/lib/api-fetch";
 
 interface Chapter {
   title: string;
@@ -115,8 +116,8 @@ const EditPage = () => {
       setIsLoading(true);
       try {
         const [bookRes, chaptersRes] = await Promise.all([
-          fetch(`/api/books/${id}`),
-          fetch(`/api/chapters/${id}`),
+          apiFetch(`/api/books/${id}`),
+          apiFetch(`/api/chapters/${id}`),
         ]);
         if (!bookRes.ok || !chaptersRes.ok) throw new Error("API Error");
 
@@ -140,7 +141,8 @@ const EditPage = () => {
           },
           selectedChapterNumber: 1,
         }));
-      } catch (err) {
+      } catch (err: any) {
+        if (err?.message === "UNAUTHORIZED") return;
         console.error("Failed to restore data:", err);
       } finally {
         setIsLoading(false);
@@ -151,7 +153,7 @@ const EditPage = () => {
 
   const refreshChapters = useCallback(async () => {
     try {
-      const res = await fetch(`/api/chapters/${id}`);
+      const res = await apiFetch(`/api/chapters/${id}`);
       if (!res.ok) throw new Error("Fetch failed");
       const data = await res.json();
       const sanitized = data.map((ch: any) => ({
@@ -160,14 +162,15 @@ const EditPage = () => {
         content: ch.content ?? "",
       }));
       setLocalChapters(sanitized);
-      setState((prev: any) => ({
-        ...prev,
-        book: { ...prev.book, chapters: sanitized },
-      }));
-    } catch (err) {
+      // setState((prev: any) => ({
+      //   ...prev,
+      //   book: { ...prev.book, chapters: sanitized },
+      // }));
+    } catch (err: any) {
+      if (err?.message === "UNAUTHORIZED") return;
       console.error("Sync error:", err);
     }
-  }, [id, setState]);
+  }, [id]);
 
   const handleSelectChapter = useCallback(
     (chapterNumber: number) => {
@@ -261,7 +264,7 @@ const EditPage = () => {
       chapters.forEach((ch: any) => {
         if (ch.id) {
           patches.push(
-            fetch(`/api/chapters/${ch.id}`, {
+            apiFetch(`/api/chapters/${ch.id}`, {
               method: "PATCH",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
@@ -285,7 +288,7 @@ const EditPage = () => {
       });
 
       if (newChapters.length > 0) {
-        const res = await fetch("/api/chapters", {
+        const res = await apiFetch("/api/chapters", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ chapters: newChapters }),
@@ -303,10 +306,10 @@ const EditPage = () => {
           return;
         }
       }
-
       alert("Saved successfully!");
       await refreshChapters();
-    } catch (err) {
+    } catch (err: any) {
+      if (err?.message === "UNAUTHORIZED") return;
       console.error("Save failed:", err);
       alert("Connection error while saving!");
     } finally {

@@ -21,13 +21,14 @@ import { useEffect, useState } from "react";
 import { User } from "../columns";
 import { TableSkeleton } from "@/components/TableSkeleton";
 import UserOrdersCard from "@/components/orders/UserOrdersCard";
+import { apiFetch } from "@/lib/api-fetch";
 const UserDetailPage = ({ params }: { params: Promise<{ id: string }> }) => {
   const { id } = useParams();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   useEffect(() => {
     async function getData() {
-      const res = await fetch(`/api/users/${id}`, { cache: "no-cache" });
+      const res = await apiFetch(`/api/users/${id}`, { cache: "no-cache" });
       const data = await res.json();
       console.log(user);
       setUser(data);

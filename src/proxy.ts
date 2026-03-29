@@ -1,12 +1,13 @@
+// proxy.ts
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { encrypt, getSession } from "./lib/session";
 import { decodeJwtExpiry } from "./lib/token";
 import arcjet, { shield, fixedWindow, detectBot } from "@arcjet/next";
 
-const publicRoutes = ["/signin", "/signup"];
+const adminRoutes = ["/dashboard", "/admin"];
+const publicRoutes = ["/", "/signin", "/signup"];
 
-// ✅ Rule chung cho toàn app
 const aj = arcjet({
   key: process.env.ARCJET_KEY!,
   characteristics: ["ip.src"],
@@ -19,7 +20,6 @@ const aj = arcjet({
   ],
 });
 
-// ✅ Rule chặt hơn cho auth routes
 const authAj = arcjet({
   key: process.env.ARCJET_KEY!,
   characteristics: ["ip.src"],
@@ -35,9 +35,6 @@ const authAj = arcjet({
 
 export default async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
-  if (pathname === "/unauthorized") {
-    return NextResponse.next();
-  }
 
   const isAuthRoute =
     pathname.startsWith("/api/auth") ||
@@ -53,43 +50,22 @@ export default async function proxy(req: NextRequest) {
         { status: 429 },
       );
     }
-    if (decision.reason.isBot()) {
-      return NextResponse.json({ message: "Bot detected" }, { status: 403 });
-    }
-    if (decision.reason.isShield()) {
-      return NextResponse.json({ message: "Forbidden" }, { status: 403 });
-    }
     return NextResponse.json({ message: "Forbidden" }, { status: 403 });
   }
 
   const session = await getSession();
   const isPublicRoute = publicRoutes.includes(pathname);
-  const isProtectedRoute =
-    pathname.startsWith("/dashboard") || pathname.startsWith("/admin");
-  const isRootRoute = pathname === "/";
-
-  if (isRootRoute && session) {
-    if ((session.user.role as unknown) !== "ADMIN") {
-      return NextResponse.redirect(new URL("/unauthorized", req.url));
-    }
-    return NextResponse.redirect(new URL("/dashboard", req.url));
-  }
+  const isProtectedRoute = adminRoutes.some((r) => pathname.startsWith(r));
 
   if (isProtectedRoute && !session) {
     return NextResponse.redirect(new URL("/signin", req.url));
   }
 
-  if (
-    isProtectedRoute &&
-    session &&
-    (session.user.role as unknown) !== "ADMIN"
-  ) {
-    return NextResponse.redirect(new URL("/unauthorized", req.url));
-  }
 
   if (isPublicRoute && session) {
     return NextResponse.redirect(new URL("/dashboard", req.url));
   }
+
 
   if (session && isProtectedRoute) {
     const now = Date.now();
@@ -115,22 +91,22 @@ export default async function proxy(req: NextRequest) {
         const newAtExpiresAt =
           decodeJwtExpiry(tokens.accessToken) ?? Date.now() + 15 * 60 * 1000;
 
-        const newSessionPayload = {
+        const newSession = await encrypt({
           ...session,
           accessToken: tokens.accessToken,
           refreshToken: tokens.refreshToken,
           atExpiresAt: newAtExpiresAt,
-        };
+        });
 
-        const newSessionValue = await encrypt(newSessionPayload);
-        const requestHeaders = new Headers(req.headers);
         const isProd = process.env.NODE_ENV === "production";
-        requestHeaders.set("cookie", `session=${newSessionValue}`);
+        const requestHeaders = new Headers(req.headers);
+        requestHeaders.set("cookie", `session=${newSession}`);
 
         const response = NextResponse.next({
           request: { headers: requestHeaders },
         });
-        response.cookies.set("session", newSessionValue, {
+
+        response.cookies.set("session", newSession, {
           httpOnly: true,
           secure: isProd,
           sameSite: isProd ? "none" : "lax",
@@ -153,7 +129,6 @@ export default async function proxy(req: NextRequest) {
 
 export const config = {
   matcher: [
-    "/api/:path*",
     "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };

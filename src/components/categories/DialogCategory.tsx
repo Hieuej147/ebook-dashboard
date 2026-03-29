@@ -16,6 +16,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Plus, Loader2, Image as ImageIcon } from "lucide-react";
 import { toast } from "sonner";
+import { apiFetch } from "@/lib/api-fetch";
 
 interface DialogCategoryProps {
   onSuccess?: () => void;
@@ -34,12 +35,11 @@ const DialogCategory = ({ onSuccess }: DialogCategoryProps) => {
     e.preventDefault();
     setLoading(true);
     try {
-      const res = await fetch("/api/category", {
+      const res = await apiFetch("/api/category", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
       });
-
       const result = await res.json();
 
       if (res.ok) {
@@ -55,7 +55,8 @@ const DialogCategory = ({ onSuccess }: DialogCategoryProps) => {
       } else {
         toast.error(result.message || "Có lỗi xảy ra");
       }
-    } catch (error) {
+    } catch (error:any) {
+      if (error?.message === "UNAUTHORIZED") return;
       toast.error("Lỗi kết nối server");
     } finally {
       setLoading(false);

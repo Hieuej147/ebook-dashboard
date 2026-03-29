@@ -50,7 +50,7 @@ export default function UserInfoCard({
             <SheetTrigger asChild>
               <Button size="sm">Edit user</Button>
             </SheetTrigger>
-            {/* Truyền dữ liệu sang component Edit để điền vào Form */}
+
             <EditUser
               initialData={user}
               onSuccess={(newData) => {

@@ -35,6 +35,7 @@ import { useHumanInTheLoop, ToolCallStatus } from "@copilotkit/react-core/v2";
 import { useLangChainAgent } from "@/app/provider/AgentContext";
 import { ReviewForm } from "../action-ai/ReviewForm";
 import { toast } from "sonner";
+import { apiFetch } from "@/lib/api-fetch";
 
 const styleItems = [
   { label: "Informative", value: "informative" },
@@ -71,9 +72,13 @@ export default function DialogBook() {
   const chapters = state?.book?.chapters || [];
   useEffect(() => {
     if (isOpen && categories.length === 0) {
-      fetch("/api/category/list")
+      apiFetch("/api/category/list")
         .then((r) => r.json())
-        .then((d) => setCategories(Array.isArray(d) ? d : d.data || []));
+        .then((d) => setCategories(Array.isArray(d) ? d : d.data || []))
+        .catch((e) => {
+          if (e?.message === "UNAUTHORIZED") return;
+          console.error(e);
+        });
     }
   }, [isOpen]);
 
@@ -141,7 +146,7 @@ export default function DialogBook() {
         categoryId: selectedCategoryId,
       };
 
-      const Bookres = await fetch("/api/books", {
+      const Bookres = await apiFetch("/api/books", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -159,14 +164,15 @@ export default function DialogBook() {
           bookId: book.id, // Quan trọng: Gán ID sách vừa tạo vào đây
         })),
       };
-      const ChapterRes = await fetch("/api/chapters", {
+      const ChapterRes = await apiFetch("/api/chapters", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(chaptersPayload),
       });
       if (!ChapterRes.ok) throw new Error("Failed to create chapters");
       router.push(`/dashboard/books/${book.id}/chapters`);
-    } catch (error) {
+    } catch (error: any) {
+      if (error?.message === "UNAUTHORIZED") return;
       console.error("Error creating book and chapters:", error);
       toast.error(`Something wrong: ${error}`);
     } finally {

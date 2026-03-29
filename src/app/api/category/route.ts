@@ -1,18 +1,13 @@
+// app/api/category/route.ts
 import axiosServer from "@/lib/axios-server";
 import { handleApiError } from "@/lib/api-error";
 import { NextResponse } from "next/server";
-import { getSession } from "@/lib/session";
+import { withAuth } from "@/lib/with-auth";
 import { createCategoryApiSchema } from "@/lib/zod";
 
-export async function POST(req: Request) {
-  const session = await getSession();
-  if (!session) {
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-  }
-
+export const POST = withAuth(async (req) => {
   try {
     const body = await req.json();
-
     const result = createCategoryApiSchema.safeParse(body);
     if (!result.success) {
       return NextResponse.json(
@@ -23,11 +18,9 @@ export async function POST(req: Request) {
         { status: 400 },
       );
     }
-
-    // ✅ dùng result.data thay vì body
     const res = await axiosServer.post("/category", result.data);
     return NextResponse.json(res.data);
   } catch (error) {
     return handleApiError(error, "Không thể tạo danh mục mới");
   }
-}
+});

@@ -7,6 +7,7 @@ import { ShoppingBag, CalendarIcon, ChevronLeft, Eye } from "lucide-react";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import OrderDetailCard from "./OrderItemCard";
+import { apiFetch } from "@/lib/api-fetch";
 
 interface UserOrdersCardProps {
   userId: string;
@@ -21,7 +22,7 @@ const UserOrdersCard = ({ userId }: UserOrdersCardProps) => {
     const fetchUserOrders = async () => {
       const params = new URLSearchParams({ page: "1", limit: "10" });
       try {
-        const res = await fetch(
+        const res = await apiFetch(
           `/api/orders/user/${userId}?${params.toString()}`,
         );
         const result = await res.json();
@@ -30,7 +31,8 @@ const UserOrdersCard = ({ userId }: UserOrdersCardProps) => {
         const cleanOrders =
           result.data?.map((wrapper: any) => wrapper.data) || [];
         setOrders(cleanOrders);
-      } catch (error) {
+      } catch (error: any) {
+        if (error?.message === "UNAUTHORIZED") return;
         console.error("Lỗi fetch đơn hàng:", error);
       } finally {
         setLoading(false);
