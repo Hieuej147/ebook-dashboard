@@ -52,7 +52,7 @@ export default async function proxy(req: NextRequest) {
   if (isPublicRoute && session) {
     return NextResponse.redirect(new URL("/dashboard", req.url));
   }
-
+  console.log("=== CHECK ROLE ===", session?.user?.role);
   if (session && isProtectedRoute) {
     if (session.user.role !== Role.ADMIN) {
       return NextResponse.redirect(new URL("/unauthorized", req.url));
