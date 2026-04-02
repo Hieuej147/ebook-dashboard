@@ -3,54 +3,42 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { encrypt, getSession } from "./lib/session";
 import { decodeJwtExpiry } from "./lib/token";
-import arcjet, { shield, fixedWindow, detectBot } from "@arcjet/next";
+
 
 const adminRoutes = ["/dashboard", "/admin"];
 const publicRoutes = ["/", "/signin", "/signup"];
 
-const aj = arcjet({
-  key: process.env.ARCJET_KEY!,
-  characteristics: ["ip.src"],
-  rules: [
-    shield({ mode: "LIVE" }),
-    detectBot({
-      mode: "LIVE",
-      allow: ["CATEGORY:SEARCH_ENGINE", "CATEGORY:MONITOR"],
-    }),
-  ],
-});
+const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
 
-const authAj = arcjet({
-  key: process.env.ARCJET_KEY!,
-  characteristics: ["ip.src"],
-  rules: [
-    shield({ mode: "LIVE" }),
-    fixedWindow({
-      mode: "LIVE",
-      window: "1m",
-      max: 10,
-    }),
-  ],
-});
+function isRateLimited(ip: string): boolean {
+  const now = Date.now();
+  const record = rateLimitMap.get(ip);
+
+  if (!record || record.resetAt < now) {
+    rateLimitMap.set(ip, { count: 1, resetAt: now + 60_000 });
+    return false;
+  }
+
+  if (record.count >= 60) return true;
+
+  record.count++;
+  return false;
+}
 
 export default async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
+  const ip = req.headers.get("x-forwarded-for")?.split(",")[0] ?? "unknown";
 
   const isAuthRoute =
     pathname.startsWith("/api/auth") ||
     pathname === "/signin" ||
     pathname === "/signup";
 
-  const decision = await (isAuthRoute ? authAj : aj).protect(req);
-
-  if (decision.isDenied()) {
-    if (decision.reason.isRateLimit()) {
-      return NextResponse.json(
-        { message: "Too many requests. Please try again later." },
-        { status: 429 },
-      );
-    }
-    return NextResponse.json({ message: "Forbidden" }, { status: 403 });
+  if (isAuthRoute && isRateLimited(ip)) {
+    return NextResponse.json(
+      { message: "Too many requests. Please try again later." },
+      { status: 429 },
+    );
   }
 
   const session = await getSession();
@@ -61,11 +49,9 @@ export default async function proxy(req: NextRequest) {
     return NextResponse.redirect(new URL("/signin", req.url));
   }
 
-
   if (isPublicRoute && session) {
     return NextResponse.redirect(new URL("/dashboard", req.url));
   }
-
 
   if (session && isProtectedRoute) {
     const now = Date.now();
