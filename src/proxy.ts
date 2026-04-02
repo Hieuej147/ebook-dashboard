@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { encrypt, getSession } from "./lib/session";
 import { decodeJwtExpiry } from "./lib/token";
-import { Role } from "./lib/types";
+
 
 const adminRoutes = ["/dashboard", "/admin"];
 const publicRoutes = ["/", "/signin", "/signup"];
