@@ -1,11 +1,16 @@
+// Sửa thành String Enum
 export enum Role {
-  ADMIN,
-  USER,
+  ADMIN = "ADMIN",
+  USER = "USER",
 }
+
+// Bạn nên sửa luôn cả CustomerType cho an toàn, vì NestJS chắc cũng trả về chữ
 export enum CustomerType {
-  NORMAL,
-  PREMIUM,
+  NORMAL = "NORMAL",
+  PREMIUM = "PREMIUM",
 }
+
+// ... các interface bên dưới giữ nguyên
 export type FormState =
   | {
       error?: {

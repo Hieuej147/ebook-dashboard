@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { encrypt, getSession } from "./lib/session";
 import { decodeJwtExpiry } from "./lib/token";
-
+import { Role } from "./lib/types";
 
 const adminRoutes = ["/dashboard", "/admin"];
 const publicRoutes = ["/", "/signin", "/signup"];
@@ -54,8 +54,7 @@ export default async function proxy(req: NextRequest) {
   }
 
   if (session && isProtectedRoute) {
-    const userRole = String(session.user.role).toUpperCase();
-    if (userRole !== "ADMIN") {
+    if (session.user.role !== Role.ADMIN) {
       return NextResponse.redirect(new URL("/unauthorized", req.url));
     }
     const now = Date.now();
