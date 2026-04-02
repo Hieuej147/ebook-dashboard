@@ -18,10 +18,6 @@ const axiosServer = axios.create({
 // REQUEST: Gắn access token từ session
 axiosServer.interceptors.request.use(async (config) => {
   const session = await getSession();
-  console.log(
-    "=== AXIOS GỬI TOKEN ===",
-    session?.accessToken ? "CÓ TOKEN" : "KHÔNG CÓ TOKEN",
-  );
   if (session?.accessToken) {
     config.headers.Authorization = `Bearer ${session.accessToken}`;
   }
