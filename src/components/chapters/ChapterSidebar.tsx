@@ -6,8 +6,6 @@ import {
   Trash2,
   Wand2,
 } from "lucide-react";
-import { Button } from "./ui/button";
-import { ScrollArea } from "./ui/scroll-area";
 import { Chapter } from "@/lib/types";
 
 import {
@@ -28,6 +26,8 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { memo, useEffect, useState } from "react";
+import { Button } from "../ui/button";
+import { ScrollArea } from "../ui/scroll-area";
 // --- Component Item có thể kéo thả ---
 interface SortTableItemProps {
   chapter: Chapter;
