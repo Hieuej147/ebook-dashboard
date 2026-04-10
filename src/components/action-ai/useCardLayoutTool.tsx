@@ -56,11 +56,11 @@ Only change the order WITHIN each column. Do NOT move cards between columns.`,
           status === ToolCallStatus.Executing
         )
           return (
-            <p className="text-sm animate-pulse">🔄 Đang sắp xếp cards...</p>
+            <p className="text-sm animate-pulse">🔄 Sorting cards...</p>
           );
         if (status === ToolCallStatus.Complete)
           return (
-            <p className="text-sm text-green-600">✅ Đã sắp xếp Dashboard!</p>
+            <p className="text-sm text-green-600">✅ Dashboard is now organized!</p>
           );
         return <></>;
       },

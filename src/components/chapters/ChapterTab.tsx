@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Sparkles, Loader2, Maximize2, Minimize2 } from "lucide-react";
-import { Button } from "./ui/button";
+import { Button } from "../ui/button";
 
 interface Chapter {
   title: string;
@@ -54,8 +54,8 @@ const ChapterEditTab = ({
       {/* (EDITOR) */}
       <div className="flex-1 flex flex-col relative overflow-hidden">
         {isGenerating && (
-          <div className="absolute inset-0 bg-white/60 backdrop-blur-sm z-10 flex items-center justify-center">
-            <div className="flex items-center gap-3 px-6 py-3 bg-white/80 border border-purple-100 rounded-full shadow-xl animate-in fade-in zoom-in duration-300">
+          <div className="absolute inset-0 bg-primary-foreground backdrop-blur-sm z-10 flex items-center justify-center">
+            <div className="flex items-center gap-3 px-6 py-3 bg-primary-foreground border border-purple-100 rounded-full shadow-xl animate-in fade-in zoom-in duration-300">
               <div className="relative">
                 <Loader2 className="h-5 w-5 animate-spin text-purple-600" />
                 <Sparkles className="h-3 w-3 text-purple-400 absolute -top-1 -right-1 animate-pulse" />

@@ -3,22 +3,23 @@ import { useParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import ChapterSidebar from "@/components/ChapterSidebar";
+
 import { arrayMove } from "@dnd-kit/sortable";
 import { useCopilotChat, useLangGraphInterrupt } from "@copilotkit/react-core";
 import { Loader2 } from "lucide-react";
-import { ChapterEditTab, ChapterViewTab } from "@/components/ChapterTab";
+
 import { Role, TextMessage } from "@copilotkit/runtime-client-gql";
 import {
   ResizableHandle,
   ResizablePanel,
   ResizablePanelGroup,
 } from "@/components/ui/resizable";
-import "@copilotkit/react-core/v2/styles.css";
 import { useLangChainAgent } from "@/app/provider/AgentContext";
 import { EditApprovalCard } from "@/components/action-ai/EditApprovalCard";
 import { EditorHeader } from "@/components/chapters/EditorHeader";
 import { apiFetch } from "@/lib/api-fetch";
+import ChapterSidebar from "@/components/chapters/ChapterSidebar";
+import { ChapterEditTab, ChapterViewTab } from "@/components/chapters/ChapterTab";
 
 interface Chapter {
   title: string;
@@ -162,10 +163,6 @@ const EditPage = () => {
         content: ch.content ?? "",
       }));
       setLocalChapters(sanitized);
-      // setState((prev: any) => ({
-      //   ...prev,
-      //   book: { ...prev.book, chapters: sanitized },
-      // }));
     } catch (err: any) {
       if (err?.message === "UNAUTHORIZED") return;
       console.error("Sync error:", err);
@@ -388,7 +385,7 @@ const EditPage = () => {
               onOpenSidebar={() => setIsSideBar(true)}
             />
 
-            <div className="flex-1 relative overflow-hidden bg-white">
+            <div className="flex-1 relative overflow-hidden bg-primary-foreground">
               <div
                 className="h-full w-full"
                 style={{
