@@ -369,6 +369,7 @@ const EditPage = () => {
         <ResizablePanel defaultSize={isFullScreen ? 100 : 80}>
           <main className="h-full flex flex-col">
             <EditorHeader
+            bookId={actualBookId}
               mode={mode}
               zoom={zoom}
               isRunning={isRunning}

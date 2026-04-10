@@ -11,6 +11,8 @@ import {
   Maximize2,
   Sparkles,
   Menu,
+  File,
+  FileText,
 } from "lucide-react";
 import { Loader2, Settings2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -23,9 +25,15 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  DropdownMenuSub,
+  DropdownMenuSubTrigger,
+  DropdownMenuPortal,
+  DropdownMenuSubContent,
 } from "@/components/ui/dropdown-menu";
+import { useExportBook } from "@/hooks/useExportBook";
 
 interface Props {
+  bookId: string;
   mode: "edit" | "view";
   zoom: number;
   isRunning: boolean;
@@ -43,6 +51,7 @@ interface Props {
 }
 
 export const EditorHeader = memo(function EditorHeader({
+  bookId,
   mode,
   zoom,
   isRunning,
@@ -58,6 +67,7 @@ export const EditorHeader = memo(function EditorHeader({
   isThinking,
   isWritingChapter,
 }: Props) {
+  const { isExporting, handleExport } = useExportBook(bookId);
   return (
     <header className="h-14 flex items-center justify-between p-1.25 bg-primary-foreground border-b">
       {/* Desktop */}
@@ -117,9 +127,31 @@ export const EditorHeader = memo(function EditorHeader({
         <Button variant="ghost" size="icon" onClick={onFullScreen}>
           {isFullScreen ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
         </Button>
-        <Button variant="outline" size="sm" className="gap-2 text-xs">
-          <Share2 className="h-4 w-4" /> Export
-        </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-2 text-xs"
+              disabled={isExporting}
+            >
+              {isExporting ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Share2 className="h-4 w-4" />
+              )}
+              {isExporting ? "Exporting..." : "Export"}
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => handleExport("pdf")}>
+              <FileText className="mr-2 h-4 w-4 text-red-500" /> Export as PDF
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => handleExport("doc")}>
+              <File className="mr-2 h-4 w-4 text-blue-500" /> Export Word
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
         <Button
           size="sm"
           className="gap-2 bg-purple-600 hover:bg-purple-700 text-white text-xs shadow-md"
@@ -184,9 +216,29 @@ export const EditorHeader = memo(function EditorHeader({
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-              <DropdownMenuItem>
-                <Share2 className="mr-2 h-4" /> Export
-              </DropdownMenuItem>
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger disabled={isExporting}>
+                  {isExporting ? (
+                    <Loader2 className="mr-2 h-4 animate-spin" />
+                  ) : (
+                    <Share2 className="mr-2 h-4" />
+                  )}
+                  {isExporting ? "Exporting..." : "Export Book"}
+                </DropdownMenuSubTrigger>
+
+                <DropdownMenuPortal>
+                  <DropdownMenuSubContent>
+                    <DropdownMenuItem onClick={() => handleExport("pdf")}>
+                      <FileText className="mr-2 h-4 w-4 text-red-500" /> PDF
+                      Format
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleExport("doc")}>
+                      <File className="mr-2 h-4 w-4 text-blue-500" /> Word
+                      Format
+                    </DropdownMenuItem>
+                  </DropdownMenuSubContent>
+                </DropdownMenuPortal>
+              </DropdownMenuSub>
               <DropdownMenuItem onClick={onSave}>
                 {isSavingAll ? (
                   <Loader2 className="mr-2 h-4 animate-spin" />
