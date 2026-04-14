@@ -1,8 +1,6 @@
 "use client";
 
 import { useCallback, useState, useTransition } from "react";
-import { Search } from "lucide-react";
-import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { CustomPagination } from "../CustomPagination"; // Nhớ dùng file Phân trang Proxy
 import CategoryFolder from "@/components/categories/CategoryFolder";

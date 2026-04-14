@@ -14,40 +14,41 @@ interface AgentContextType {
 
 const AgentContext = createContext<AgentContextType | undefined>(undefined);
 
-export const AgentProvider = memo(
-  ({ children }: { children: React.ReactNode }) => {
-    const {
+const INITIAL_AGENT_STATE: AgentState = {
+  book: { title: "", topic: "", writingStyle: "", chapters: [] },
+  sources: {},
+  selectedChapterNumber: 1,
+  logs: [],
+  worker_task: "",
+  worker_report: "",
+  active_worker: "",
+};
+
+export const AgentProvider = ({ children }: { children: React.ReactNode }) => {
+  const {
+    state: coAgentState,
+    setState: setCoAgentState,
+    running,
+    nodeName: NodeName,
+  } = useCoAgent<AgentState>({
+    name: "default",
+    initialState: INITIAL_AGENT_STATE,
+  });
+
+  const value = React.useMemo(
+    () => ({
       state: coAgentState,
       setState: setCoAgentState,
       running,
       nodeName: NodeName,
-    } = useCoAgent<AgentState>({
-      name: "default",
-      initialState: {
-        book: { title: "", topic: "", writingStyle: "", chapters: [] },
-        sources: {},
-        selectedChapterNumber: 1,
-        logs: [],
-      },
-    });
+    }),
+    [coAgentState, setCoAgentState, running, NodeName],
+  );
 
-    const value = React.useMemo(
-      () => ({
-        state: coAgentState,
-        setState: setCoAgentState,
-        running,
-        nodeName: NodeName,
-      }),
-      [coAgentState, setCoAgentState, running, NodeName],
-    );
-
-    return (
-      <AgentContext.Provider value={value}>{children}</AgentContext.Provider>
-    );
-  },
-);
-
-AgentProvider.displayName = "AgentProvider";
+  return (
+    <AgentContext.Provider value={value}>{children}</AgentContext.Provider>
+  );
+};
 
 export const useLangChainAgent = () => {
   const context = useContext(AgentContext);

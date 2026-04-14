@@ -14,10 +14,7 @@ export function Progress({
   }
 
   return (
-    <div
-      data-test-id="progress-steps"
-      className="w-full max-w-md mx-auto"
-    >
+    <div data-test-id="progress-steps" className="w-full max-w-md mx-auto">
       <div className="bg-card text-card-foreground rounded-xl border shadow-sm overflow-hidden text-sm p-4">
         <div className="space-y-1">
           {logs.map((log, index) => {
