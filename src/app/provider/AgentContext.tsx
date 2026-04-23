@@ -22,12 +22,15 @@ export const AgentProvider = memo(
       running,
       nodeName: NodeName,
     } = useCoAgent<AgentState>({
-      name: "default",
+      name: "dashboard",
       initialState: {
         book: { title: "", topic: "", writingStyle: "", chapters: [] },
         sources: {},
         selectedChapterNumber: 1,
         logs: [],
+        worker_task: "",
+        worker_report: "",
+        active_worker: "",
       },
     });
 

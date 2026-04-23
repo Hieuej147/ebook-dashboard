@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { memo, useEffect, useState } from "react";
 import {
   Dialog,
   DialogClose,
@@ -45,20 +45,8 @@ const styleItems = [
   { label: "Humorous", value: "humorous" },
 ];
 
-export default function DialogBook() {
-  const { state, setState, running, nodeName } = useCoAgent<AgentState>({
-    name: "default", // Phải khớp với name ở Python và route.ts
-    initialState: {
-      book: {
-        title: "",
-        topic: "",
-        author: "",
-        chapters: [],
-      },
-      selectedChapterNumber: 1,
-      logs: [],
-    },
-  });
+export default memo(function DialogBook() {
+  const { state, setState, running, nodeName } = useLangChainAgent();
   const [steps, setSteps] = useState(1);
   const [isOpen, setIsOpen] = useState(false);
   const [writingStyle, setWritingStyle] = useState("informative");
@@ -435,4 +423,4 @@ export default function DialogBook() {
       </Dialog>
     </>
   );
-}
+});
