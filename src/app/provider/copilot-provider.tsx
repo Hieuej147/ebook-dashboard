@@ -15,6 +15,7 @@ export default function CopilotProviderCustom({
       headers={{
         Authorization: accessToken ? `Bearer ${accessToken}` : "",
       }}
+      publicApiKey="ck_pub_6f1561376415dd4da1f9c672d224e147"
       agent="dashboard"
     >
       {children}
