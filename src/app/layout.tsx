@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
-import { CopilotKit } from "@copilotkit/react-core";
 import "@copilotkit/react-ui/styles.css"; // Thêm dòng này
 import { AgentProvider } from "./provider/AgentContext";
+import CopilotKitCustom from "./provider/copilot-provider";
 import { getSession } from "@/lib/session";
 
 const geistSans = Geist({
@@ -39,13 +39,9 @@ export default async function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <CopilotKit
-            runtimeUrl="/api/copilotkit"
-            showDevConsole={false}
-            agent="default"
-          >
+          <CopilotKitCustom accessToken={session?.accessToken}>
             <AgentProvider>{children}</AgentProvider>
-          </CopilotKit>
+          </CopilotKitCustom>
         </ThemeProvider>
       </body>
     </html>

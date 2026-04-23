@@ -19,10 +19,7 @@ import { EditApprovalCard } from "@/components/action-ai/EditApprovalCard";
 import { EditorHeader } from "@/components/chapters/EditorHeader";
 import { apiFetch } from "@/lib/api-fetch";
 import ChapterSidebar from "@/components/chapters/ChapterSidebar";
-import {
-  ChapterEditTab,
-  ChapterViewTab,
-} from "@/components/chapters/ChapterTab";
+import { ChapterEditTab, ChapterViewTab } from "@/components/chapters/ChapterTab";
 
 interface Chapter {
   title: string;
@@ -113,7 +110,10 @@ const EditPage = () => {
   useEffect(() => {
     async function restoreData() {
       if (!id) return;
-      setLocalChapters([]);
+      if (state.book?.chapters?.length > 0) {
+        setIsLoading(false);
+        return;
+      }
       setIsLoading(true);
       try {
         const [bookRes, chaptersRes] = await Promise.all([
@@ -369,7 +369,7 @@ const EditPage = () => {
         <ResizablePanel defaultSize={isFullScreen ? 100 : 80}>
           <main className="h-full flex flex-col">
             <EditorHeader
-              bookId={actualBookId}
+            bookId={actualBookId}
               mode={mode}
               zoom={zoom}
               isRunning={isRunning}
