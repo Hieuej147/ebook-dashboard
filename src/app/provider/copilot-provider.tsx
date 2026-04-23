@@ -8,7 +8,7 @@ export default function CopilotProviderCustom({
   children: React.ReactNode;
   accessToken?: string;
 }) {
-  const runtimeUrl = process.env.NEXT_PUBLIC_COPILOT_RUNTIME_URL!;
+  const runtimeUrl = process.env.COPILOT_RUNTIME_URL!;
   return (
     <CopilotKit
       runtimeUrl={runtimeUrl}
