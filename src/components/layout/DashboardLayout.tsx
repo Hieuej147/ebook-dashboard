@@ -1,5 +1,6 @@
 "use client";
 import { usePathname, useRouter } from "next/navigation";
+import { useCoAgentStateRender } from "@copilotkit/react-core";
 import {
   useAgent,
   useFrontendTool,
@@ -11,7 +12,6 @@ import AppSidebar from "./AppSidebar";
 import Navbar from "./Navbar";
 import { Toaster } from "sonner";
 import z from "zod";
-import { useCoAgentStateRender } from "@copilotkit/react-core";
 import { AgentState } from "@/lib/types";
 import { Progress } from "../action-ai/Log";
 import "@copilotkit/react-core/v2/styles.css";
