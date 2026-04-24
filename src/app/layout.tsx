@@ -28,6 +28,7 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const session = await getSession();
+  const runtimeUrl = process.env.COPILOTKIT_RUNTIME_URL!;
   return (
     <html lang="en" suppressHydrationWarning>
       <body
@@ -39,7 +40,10 @@ export default async function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <CopilotKitCustom accessToken={session?.accessToken}>
+          <CopilotKitCustom
+            accessToken={session?.accessToken}
+            runtime={runtimeUrl}
+          >
             <AgentProvider>{children}</AgentProvider>
           </CopilotKitCustom>
         </ThemeProvider>
