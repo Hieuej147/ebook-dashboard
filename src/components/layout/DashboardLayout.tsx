@@ -1,6 +1,5 @@
 "use client";
 import { usePathname, useRouter } from "next/navigation";
-import { useCoAgentStateRender } from "@copilotkit/react-core";
 import {
   useAgent,
   useFrontendTool,
@@ -16,9 +15,6 @@ import { AgentState } from "@/lib/types";
 import { Progress } from "../action-ai/Log";
 import "@copilotkit/react-core/v2/styles.css";
 import { useLangChainAgent } from "@/app/provider/AgentContext";
-import { CopilotSidebar } from "@copilotkit/react-ui";
-// import { CopilotSidebar } from "@copilotkit/react-core/v2";
-// import "@copilotkit/react-core/v2/styles.css";
 import { BookAgentSuggestions } from "@/hooks/useSuggestions";
 import AdminChatSidebar from "../CustomeSideChat";
 
@@ -30,15 +26,15 @@ interface LayoutProps {
 export function EAdminLayout({ children, defaultOpen }: LayoutProps) {
   const { state, setState } = useLangChainAgent();
   const router = useRouter();
-  useCoAgentStateRender<AgentState>({
-    name: "default",
-    render: ({ state }) => {
-      if (state.logs?.length > 0) {
-        return <Progress logs={state.logs} />;
-      }
-      return null;
-    },
-  });
+  // useCoAgentStateRender<AgentState>({
+  //   name: "default",
+  //   render: ({ state }) => {
+  //     if (state.logs?.length > 0) {
+  //       return <Progress logs={state.logs} />;
+  //     }
+  //     return null;
+  //   },
+  // });
   useFrontendTool({
     name: "navigateRoute",
     description:
