@@ -1,4 +1,4 @@
-import { CopilotKit } from "@copilotkit/react-core";
+"use client";
 import { CopilotKitProvider } from "@copilotkit/react-core/v2";
 
 export default function CopilotProviderCustom({
