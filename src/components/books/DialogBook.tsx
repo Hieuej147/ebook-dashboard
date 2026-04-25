@@ -25,13 +25,10 @@ import { Input } from "../ui/input";
 import { ChevronLeft, Plus, Trash2, Loader2 } from "lucide-react";
 import { Button } from "../ui/button";
 import { ScrollArea } from "../ui/scroll-area";
-import { useCoAgent, useCopilotChat } from "@copilotkit/react-core";
-import { TextMessage, Role } from "@copilotkit/runtime-client-gql";
-import { AgentState, Chapter } from "@/lib/types";
-
+import { Role } from "@copilotkit/runtime-client-gql";
+import { Chapter } from "@/lib/types";
+import { useAgent, useCopilotKit } from "@copilotkit/react-core/v2";
 import { useRouter } from "next/navigation";
-import { z } from "zod";
-import { useHumanInTheLoop, ToolCallStatus } from "@copilotkit/react-core/v2";
 import { useLangChainAgent } from "@/app/provider/AgentContext";
 import { ReviewForm } from "../action-ai/ReviewForm";
 import { toast } from "sonner";
@@ -46,7 +43,9 @@ const styleItems = [
 ];
 
 export default memo(function DialogBook() {
-  const { state, setState, running, nodeName } = useLangChainAgent();
+  const { state, setState, running, nodeName, sendMessage, agent } =
+    useLangChainAgent();
+
   const [steps, setSteps] = useState(1);
   const [isOpen, setIsOpen] = useState(false);
   const [writingStyle, setWritingStyle] = useState("informative");
@@ -56,7 +55,7 @@ export default memo(function DialogBook() {
   const [selectedCategoryId, setSelectedCategoryId] = useState("");
   const [categories, setCategories] = useState([]);
   const router = useRouter();
-  const { appendMessage } = useCopilotChat();
+  // const { appendMessage } = useCopilotChat();
   const chapters = state?.book?.chapters || [];
   useEffect(() => {
     if (isOpen && categories.length === 0) {
@@ -82,7 +81,6 @@ export default memo(function DialogBook() {
   const handleGenerateOutline = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
 
-    // Thu thập dữ liệu từ Form
     const form = e.currentTarget.closest("form");
     if (!form) return;
     const formData = new FormData(form);
@@ -93,7 +91,6 @@ export default memo(function DialogBook() {
 
     setAuthorName(author);
 
-    // 2. Cập nhật Shared State để Agent nhận được ngữ cảnh ngay lập tức
     setState({
       ...state,
       book: {
@@ -102,21 +99,15 @@ export default memo(function DialogBook() {
         author,
         topic,
         writingStyle,
-        chapters: [], // Reset để hiện Loader
+        chapters: [], 
       },
     });
 
     setSteps(2);
 
-    // 3. Gửi lệnh yêu cầu AI tạo nội dung
-    appendMessage(
-      new TextMessage({
-        content: `[MANUAL_MODE] Generate an eBook outline with EXACTLY ${chaptersCount} chapters for "${title}" about "${topic}". 
+    sendMessage(`[MANUAL_MODE] Generate an eBook outline with EXACTLY ${chaptersCount} chapters for "${title}" about "${topic}". 
       Style: ${writingStyle}. 
-      Update the 'update_book_outline' tool ONLY. Do NOT use any approval cards in chat.`,
-        role: Role.User,
-      }),
-    );
+      Update the 'update_book_outline' tool ONLY. Do NOT use any approval cards in chat.`);
   };
   const handleCreateBook = async (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
@@ -206,7 +197,7 @@ export default memo(function DialogBook() {
         open={isOpen}
         onOpenChange={(open) => {
           setIsOpen(open);
-          if (!open) setSteps(1); // Reset step khi đóng
+          if (!open) setSteps(1); 
         }}
       >
         <DialogTrigger asChild>
@@ -220,7 +211,6 @@ export default memo(function DialogBook() {
         </DialogTrigger>
 
         <DialogContent className="sm:max-w-[500px]">
-          {/* Đưa thẻ form vào trong DialogContent để tránh lỗi Portal */}
           <form onSubmit={(e) => e.preventDefault()}>
             {steps === 1 && (
               <>

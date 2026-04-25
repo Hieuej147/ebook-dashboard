@@ -6,6 +6,7 @@ import "@copilotkit/react-ui/styles.css"; // Thêm dòng này
 import { AgentProvider } from "./provider/AgentContext";
 import CopilotKitCustom from "./provider/copilot-provider";
 import { getSession } from "@/lib/session";
+import "@copilotkit/react-core/v2/styles.css";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",

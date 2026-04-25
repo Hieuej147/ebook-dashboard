@@ -5,7 +5,8 @@ import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 import { arrayMove } from "@dnd-kit/sortable";
-import { useCopilotChat, useLangGraphInterrupt } from "@copilotkit/react-core";
+import { useLangGraphInterrupt } from "@copilotkit/react-core";
+import { useAgent, useCopilotKit } from "@copilotkit/react-core/v2";
 import { Loader2 } from "lucide-react";
 
 import { Role, TextMessage } from "@copilotkit/runtime-client-gql";
@@ -19,7 +20,10 @@ import { EditApprovalCard } from "@/components/action-ai/EditApprovalCard";
 import { EditorHeader } from "@/components/chapters/EditorHeader";
 import { apiFetch } from "@/lib/api-fetch";
 import ChapterSidebar from "@/components/chapters/ChapterSidebar";
-import { ChapterEditTab, ChapterViewTab } from "@/components/chapters/ChapterTab";
+import {
+  ChapterEditTab,
+  ChapterViewTab,
+} from "@/components/chapters/ChapterTab";
 
 interface Chapter {
   title: string;
@@ -41,8 +45,15 @@ const EditPage = () => {
   const [actualBookId, setActualBookId] = useState<string>("");
   const contentRef = useRef<Record<number, string>>({});
 
-  const { state, setState, running: isRunning, nodeName } = useLangChainAgent();
-  const { appendMessage } = useCopilotChat();
+  const {
+    state,
+    setState,
+    running: isRunning,
+    nodeName,
+    sendMessage,
+    agent,
+  } = useLangChainAgent();
+  const { copilotkit } = useCopilotKit();
 
   const isWritingChapter = isRunning && nodeName === "write_chapter_node";
   const isEditingContent =
@@ -74,12 +85,13 @@ const EditPage = () => {
     );
   }, [chapters, selectedChapterNumber]);
 
-  // ✅ Sync agent state → localChapters (when AI updates)
+
   useEffect(() => {
-    if (state.book?.chapters?.length > 0) {
-      setLocalChapters(state.book.chapters);
+    const agentChapters = state.book?.chapters;
+    if (agentChapters && agentChapters.length > 0) {
+      setLocalChapters(agentChapters);
     }
-  }, [JSON.stringify(state.book?.chapters)]);
+  }, [state.book?.chapters]); // 👈 Chỉ lắng nghe reference của mảng
 
   // ✅ Sync contentRef → CopilotKit state when AI finishes
   useEffect(() => {
@@ -159,15 +171,23 @@ const EditPage = () => {
       const data = await res.json();
       const sanitized = data.map((ch: any) => ({
         ...ch,
+        chapterNumber: Number(ch.chapterNumber),
         description: ch.description ?? "",
         content: ch.content ?? "",
       }));
       setLocalChapters(sanitized);
+      setState((prev: any) => ({
+        ...prev,
+        book: {
+          ...prev.book,
+          chapters: sanitized,
+        },
+      }));
     } catch (err: any) {
       if (err?.message === "UNAUTHORIZED") return;
       console.error("Sync error:", err);
     }
-  }, [id]);
+  }, [id, agent]);
 
   const handleSelectChapter = useCallback(
     (chapterNumber: number) => {
@@ -179,14 +199,10 @@ const EditPage = () => {
 
   const handleAddChapter = useCallback(() => {
     if (isRunning) return;
-    appendMessage(
-      new TextMessage({
-        content:
-          "Please suggest and add one new chapter to the end of the book outline.",
-        role: Role.User,
-      }),
+    sendMessage(
+      "Please suggest and add one new chapter to the end of the book outline.",
     );
-  }, [isRunning]);
+  }, [isRunning, agent, copilotkit]);
 
   const handleDeleteChapter = useCallback(
     (targetChapterNumber: number) => {
@@ -242,14 +258,11 @@ const EditPage = () => {
         (ch: Chapter) => ch.chapterNumber === target,
       );
       if (!chapter || isRunning) return;
-      appendMessage(
-        new TextMessage({
-          content: `Please write detailed content for Chapter ${target}: ${chapter.title}.\nContext: ${chapter.description}`,
-          role: Role.User,
-        }),
+      sendMessage(
+        `Please write detailed content for Chapter ${target}: ${chapter.title}.\nContext: ${chapter.description}`,
       );
     },
-    [chapters, selectedChapterNumber, isRunning],
+    [chapters, selectedChapterNumber, isRunning, agent, copilotkit],
   );
 
   const handleSaveChanges = async () => {
@@ -315,6 +328,7 @@ const EditPage = () => {
   };
 
   useLangGraphInterrupt({
+    agentId: "dashboard",
     enabled: ({ eventValue }) => eventValue?.type === "edit_approval",
     render: ({ event, resolve }) => {
       const { chapter, old_text, new_text } = event.value;
@@ -369,7 +383,7 @@ const EditPage = () => {
         <ResizablePanel defaultSize={isFullScreen ? 100 : 80}>
           <main className="h-full flex flex-col">
             <EditorHeader
-            bookId={actualBookId}
+              bookId={actualBookId}
               mode={mode}
               zoom={zoom}
               isRunning={isRunning}

@@ -1,9 +1,7 @@
 "use client";
 import { usePathname, useRouter } from "next/navigation";
 import {
-  useAgent,
   useFrontendTool,
-  useInterrupt,
 } from "@copilotkit/react-core/v2";
 import { ReactNode, useMemo, useState } from "react";
 import { SidebarProvider } from "../ui/sidebar";
@@ -11,10 +9,6 @@ import AppSidebar from "./AppSidebar";
 import Navbar from "./Navbar";
 import { Toaster } from "sonner";
 import z from "zod";
-import { AgentState } from "@/lib/types";
-import { Progress } from "../action-ai/Log";
-import "@copilotkit/react-core/v2/styles.css";
-import { useLangChainAgent } from "@/app/provider/AgentContext";
 import { BookAgentSuggestions } from "@/hooks/useSuggestions";
 import AdminChatSidebar from "../CustomeSideChat";
 
@@ -24,17 +18,7 @@ interface LayoutProps {
 }
 
 export function EAdminLayout({ children, defaultOpen }: LayoutProps) {
-  const { state, setState } = useLangChainAgent();
   const router = useRouter();
-  // useCoAgentStateRender<AgentState>({
-  //   name: "default",
-  //   render: ({ state }) => {
-  //     if (state.logs?.length > 0) {
-  //       return <Progress logs={state.logs} />;
-  //     }
-  //     return null;
-  //   },
-  // });
   useFrontendTool({
     name: "navigateRoute",
     description:
@@ -51,7 +35,6 @@ export function EAdminLayout({ children, defaultOpen }: LayoutProps) {
         ),
     }),
     handler: async ({ section, bookId }) => {
-      // Mapping routes based on your /admin folder structure
       const routes = {
         dashboard: "/dashboard",
         books: "/dashboard/books",

@@ -36,7 +36,7 @@ const Navbar = () => {
         {/**RIGHT */}
         <div className="flex items-center gap-4">
           <Link href="/">DashBoard</Link>
-          <DropdownMenu>
+          <DropdownMenu modal={false}>
             <DropdownMenuTrigger asChild>
               <Button variant="outlinenone" size="icon">
                 <Sun className="h-[1.2rem] w-[1.2rem] scale-100 rotate-0 transition-all dark:scale-0 dark:-rotate-90" />
