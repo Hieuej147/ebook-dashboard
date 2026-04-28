@@ -11,7 +11,6 @@ import { Role } from "@copilotkit/runtime-client-gql";
 
 interface AgentContextType {
   state: AgentState;
-  setState: (newStateOrUpdater: any) => void;
   running: boolean;
   sendMessage: (content: string) => void;
   nodeName: string | undefined;
@@ -59,13 +58,12 @@ export function AgentProvider({ children }: { children: React.ReactNode }) {
   const value = useMemo(
     () => ({
       state,
-      setState: agent.setState, // Dùng thẳng hàm setState của thư viện
       running: agent.isRunning, // Dùng trạng thái gốc của thư viện
       nodeName: state?.active_worker || undefined,
       sendMessage,
       agent,
     }),
-    [state, agent, agent.isRunning, sendMessage],
+    [agent.state, agent.isRunning, sendMessage],
   );
 
   return (

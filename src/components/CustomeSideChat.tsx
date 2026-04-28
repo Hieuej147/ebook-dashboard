@@ -18,13 +18,17 @@ const ChatGPTThinking = () => (
 );
 
 export default function AdminChatSidebar() {
-  const { state, setState, running } = useLangChainAgent();
+  const { state, running, agent } = useLangChainAgent();
 
   useEffect(() => {
     if (running) {
-      setState((prev: any) => ({ ...prev, logs: [] }));
+      // ✅ CHUẨN DOCS: Truyền thẳng một Object mới, lấy dữ liệu từ agent.state
+      agent.setState({
+        ...agent.state,
+        logs: [],
+      });
     }
-  }, [running]);
+  }, [running, agent]); // Thêm agent vào deps
 
   return (
     <CopilotSidebar

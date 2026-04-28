@@ -1,15 +1,13 @@
 "use client";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { X } from "lucide-react";
+import { X, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 import { arrayMove } from "@dnd-kit/sortable";
 import { useLangGraphInterrupt } from "@copilotkit/react-core";
-import { useAgent, useCopilotKit } from "@copilotkit/react-core/v2";
-import { Loader2 } from "lucide-react";
+import { useCopilotKit } from "@copilotkit/react-core/v2";
 
-import { Role, TextMessage } from "@copilotkit/runtime-client-gql";
 import {
   ResizableHandle,
   ResizablePanel,
@@ -47,7 +45,6 @@ const EditPage = () => {
 
   const {
     state,
-    setState,
     running: isRunning,
     nodeName,
     sendMessage,
@@ -63,10 +60,9 @@ const EditPage = () => {
   const isThinking = isRunning && nodeName === "call_model_node";
   const selectedChapterNumber = state.selectedChapterNumber || 1;
 
-  const isModifyingChapters = isUpdatingOutline || isEditingOutline; // sidebar indicator
-  const isGeneratingContent = isWritingChapter; // editor indicator
+  const isModifyingChapters = isUpdatingOutline || isEditingOutline;
+  const isGeneratingContent = isWritingChapter;
 
-  // ✅ localChapters is source of truth for rendering
   const chapters = useMemo(() => {
     if (localChapters.length > 0) return localChapters;
     return state.book?.chapters || [];
@@ -85,32 +81,30 @@ const EditPage = () => {
     );
   }, [chapters, selectedChapterNumber]);
 
-
   useEffect(() => {
     const agentChapters = state.book?.chapters;
     if (agentChapters && agentChapters.length > 0) {
       setLocalChapters(agentChapters);
     }
-  }, [state.book?.chapters]); // 👈 Chỉ lắng nghe reference của mảng
+  }, [state.book?.chapters]);
 
-  // ✅ Sync contentRef → CopilotKit state when AI finishes
+  // ✅ SỬA: Sync contentRef -> Gọi trực tiếp agent.setState với Object
   useEffect(() => {
     if (!isRunning && Object.keys(contentRef.current).length > 0) {
-      setState((prev: any) => ({
-        ...prev,
+      agent.setState({
+        ...agent.state,
         book: {
-          ...prev.book,
-          chapters: (prev.book?.chapters || []).map((ch: any) => ({
+          ...agent.state?.book,
+          chapters: (agent.state?.book?.chapters || []).map((ch: any) => ({
             ...ch,
             content: contentRef.current[ch.chapterNumber] ?? ch.content,
           })),
         },
-      }));
+      });
       contentRef.current = {};
     }
-  }, [isRunning]);
+  }, [isRunning, agent]);
 
-  // ✅ Responsive check
   useEffect(() => {
     const check = () => setIsTabletOrMobile(window.innerWidth < 1024);
     check();
@@ -118,7 +112,7 @@ const EditPage = () => {
     return () => window.removeEventListener("resize", check);
   }, []);
 
-  // ✅ Restore data from DB on mount
+  // ✅ SỬA: Restore data from DB
   useEffect(() => {
     async function restoreData() {
       if (!id) return;
@@ -143,17 +137,21 @@ const EditPage = () => {
           description: ch.description ?? "",
           content: ch.content ?? "",
         }));
+
         setLocalChapters(sanitized);
-        setState((prev: any) => ({
-          ...prev,
+
+        // Cập nhật lên Agent bằng Object thuần
+        agent.setState({
+          ...agent.state,
           book: {
+            ...agent.state?.book,
             title: bookData.title,
             topic: bookData.subtitle || bookData.topic || "",
             author: bookData.author,
             chapters: sanitized,
           },
           selectedChapterNumber: 1,
-        }));
+        });
       } catch (err: any) {
         if (err?.message === "UNAUTHORIZED") return;
         console.error("Failed to restore data:", err);
@@ -162,8 +160,9 @@ const EditPage = () => {
       }
     }
     restoreData();
-  }, [id]);
+  }, [id, agent]);
 
+  // ✅ SỬA: refreshChapters
   const refreshChapters = useCallback(async () => {
     try {
       const res = await apiFetch(`/api/chapters/${id}`);
@@ -176,25 +175,27 @@ const EditPage = () => {
         content: ch.content ?? "",
       }));
       setLocalChapters(sanitized);
-      setState((prev: any) => ({
-        ...prev,
+
+      agent.setState({
+        ...agent.state,
         book: {
-          ...prev.book,
+          ...agent.state?.book,
           chapters: sanitized,
         },
-      }));
+      });
     } catch (err: any) {
       if (err?.message === "UNAUTHORIZED") return;
       console.error("Sync error:", err);
     }
   }, [id, agent]);
 
+  // ✅ SỬA: handleSelectChapter
   const handleSelectChapter = useCallback(
     (chapterNumber: number) => {
-      setState({ ...state, selectedChapterNumber: chapterNumber });
+      agent.setState({ ...agent.state, selectedChapterNumber: chapterNumber });
       setIsSideBar(false);
     },
-    [state],
+    [agent],
   );
 
   const handleAddChapter = useCallback(() => {
@@ -202,8 +203,9 @@ const EditPage = () => {
     sendMessage(
       "Please suggest and add one new chapter to the end of the book outline.",
     );
-  }, [isRunning, agent, copilotkit]);
+  }, [isRunning, sendMessage]);
 
+  // ✅ SỬA: handleDeleteChapter
   const handleDeleteChapter = useCallback(
     (targetChapterNumber: number) => {
       const filtered = chapters.filter(
@@ -218,24 +220,28 @@ const EditPage = () => {
         next = Math.max(1, targetChapterNumber - 1);
       else if (targetChapterNumber < selectedChapterNumber)
         next = selectedChapterNumber - 1;
-      setState({
-        ...state,
+
+      agent.setState({
+        ...agent.state,
         selectedChapterNumber: next,
-        book: { ...state.book, chapters: updated },
+        book: { ...agent.state?.book, chapters: updated },
       });
     },
-    [chapters, selectedChapterNumber, state],
+    [chapters, selectedChapterNumber, agent],
   );
 
+  // ✅ SỬA: handleReorderChapters
   const handleReorderChapters = useCallback(
     (oldIndex: number, newIndex: number) => {
       const reordered = arrayMove(chapters, oldIndex, newIndex);
-      setState({ ...state, book: { ...state.book, chapters: reordered } });
+      agent.setState({
+        ...agent.state,
+        book: { ...agent.state?.book, chapters: reordered },
+      });
     },
-    [chapters, state],
+    [chapters, agent],
   );
 
-  // ✅ No CopilotKit setState on every keystroke
   const handleContentChange = useCallback(
     (val: string) => {
       const target = selectedChapterNumber;
@@ -262,7 +268,7 @@ const EditPage = () => {
         `Please write detailed content for Chapter ${target}: ${chapter.title}.\nContext: ${chapter.description}`,
       );
     },
-    [chapters, selectedChapterNumber, isRunning, agent, copilotkit],
+    [chapters, selectedChapterNumber, isRunning, sendMessage],
   );
 
   const handleSaveChanges = async () => {

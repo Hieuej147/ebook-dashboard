@@ -25,9 +25,7 @@ import { Input } from "../ui/input";
 import { ChevronLeft, Plus, Trash2, Loader2 } from "lucide-react";
 import { Button } from "../ui/button";
 import { ScrollArea } from "../ui/scroll-area";
-import { Role } from "@copilotkit/runtime-client-gql";
 import { Chapter } from "@/lib/types";
-import { useAgent, useCopilotKit } from "@copilotkit/react-core/v2";
 import { useRouter } from "next/navigation";
 import { useLangChainAgent } from "@/app/provider/AgentContext";
 import { ReviewForm } from "../action-ai/ReviewForm";
@@ -43,8 +41,7 @@ const styleItems = [
 ];
 
 export default memo(function DialogBook() {
-  const { state, setState, running, nodeName, sendMessage, agent } =
-    useLangChainAgent();
+  const { state, running, sendMessage, agent } = useLangChainAgent(); // 👈 Lấy agent ra dùng
 
   const [steps, setSteps] = useState(1);
   const [isOpen, setIsOpen] = useState(false);
@@ -55,8 +52,9 @@ export default memo(function DialogBook() {
   const [selectedCategoryId, setSelectedCategoryId] = useState("");
   const [categories, setCategories] = useState([]);
   const router = useRouter();
-  // const { appendMessage } = useCopilotChat();
+
   const chapters = state?.book?.chapters || [];
+
   useEffect(() => {
     if (isOpen && categories.length === 0) {
       apiFetch("/api/category/list")
@@ -70,14 +68,16 @@ export default memo(function DialogBook() {
   }, [isOpen]);
 
   const updateBookField = (field: string, value: any) => {
-    setState({
-      ...state,
+    // ✅ SỬA: Dùng agent.setState thay cho setState từ context
+    agent.setState({
+      ...agent.state,
       book: {
-        ...state?.book,
+        ...agent.state?.book,
         [field]: value,
       },
     });
   };
+
   const handleGenerateOutline = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
 
@@ -91,15 +91,16 @@ export default memo(function DialogBook() {
 
     setAuthorName(author);
 
-    setState({
-      ...state,
+    // ✅ SỬA: Dùng agent.setState thay cho setState từ context
+    agent.setState({
+      ...agent.state,
       book: {
-        ...state?.book,
+        ...agent.state?.book,
         title,
         author,
         topic,
         writingStyle,
-        chapters: [], 
+        chapters: [],
       },
     });
 
@@ -109,15 +110,16 @@ export default memo(function DialogBook() {
       Style: ${writingStyle}. 
       Update the 'update_book_outline' tool ONLY. Do NOT use any approval cards in chat.`);
   };
+
   const handleCreateBook = async (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
     if (chapters.length === 0) return;
-    setIsSaving(true); // Bật loading
+    setIsSaving(true);
     try {
       const payload = {
         title: state.book?.title,
         subtitle: state.book?.topic,
-        author: authorName || state.book.author, // Dùng biến từ state
+        author: authorName || state.book.author,
         description: `A ${state.book?.writingStyle} book about ${state.book?.topic}`,
         price: 19.99,
         stock: 1,
@@ -139,8 +141,8 @@ export default memo(function DialogBook() {
           title: ch.title,
           description: ch.description,
           chapterNumber: ch.chapterNumber,
-          content: "", // Nội dung sẽ để AI viết ở trang Edit
-          bookId: book.id, // Quan trọng: Gán ID sách vừa tạo vào đây
+          content: "",
+          bookId: book.id,
         })),
       };
       const ChapterRes = await apiFetch("/api/chapters", {
@@ -158,6 +160,7 @@ export default memo(function DialogBook() {
       setIsSaving(false);
     }
   };
+
   const handleAddChapter = () => {
     const newChapter = {
       chapterNumber: chapters.length + 1,
@@ -166,14 +169,16 @@ export default memo(function DialogBook() {
       content: "",
     };
 
-    setState({
-      ...state,
+    // ✅ SỬA: Dùng agent.setState thay cho setState từ context
+    agent.setState({
+      ...agent.state,
       book: {
-        ...state?.book,
+        ...agent.state?.book,
         chapters: [...chapters, newChapter],
       },
     });
   };
+
   const handleDeleteChapter = (index: number) => {
     const newChapters = chapters
       .filter((_: any, i: number) => i !== index)
@@ -182,14 +187,16 @@ export default memo(function DialogBook() {
         chapterNumber: i + 1,
       }));
 
-    setState({
-      ...state,
+    // ✅ SỬA: Dùng agent.setState thay cho setState từ context
+    agent.setState({
+      ...agent.state,
       book: {
-        ...state?.book,
+        ...agent.state?.book,
         chapters: newChapters,
       },
     });
   };
+
   return (
     <>
       <ReviewForm setIsOpen={setIsOpen} setSteps={setSteps} />
@@ -197,7 +204,7 @@ export default memo(function DialogBook() {
         open={isOpen}
         onOpenChange={(open) => {
           setIsOpen(open);
-          if (!open) setSteps(1); 
+          if (!open) setSteps(1);
         }}
       >
         <DialogTrigger asChild>
@@ -332,7 +339,7 @@ export default memo(function DialogBook() {
                     {chapters.length > 0 ? (
                       chapters.map((chapter: Chapter, index: number) => (
                         <div
-                          key={`chapter-${index}-${chapter.chapterNumber}`} // Dùng index làm key để tránh lỗi trùng title khi AI đang stream
+                          key={`chapter-${index}-${chapter.chapterNumber}`}
                           className="flex gap-4 p-4 border rounded-xl bg-card relative group hover:border-primary/50 transition-colors shadow-sm"
                         >
                           <div className="shrink-0 w-8 h-8 rounded-full bg-secondary flex items-center justify-center text-sm font-bold text-secondary-foreground">
