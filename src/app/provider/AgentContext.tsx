@@ -58,7 +58,7 @@ export const AgentProvider = memo(
         }
         hasInitialized.current = true;
       }
-    }, [agent]);
+    }, []);
 
     const isThinking = useMemo(() => {
       const messages = agent.messages || [];

@@ -24,7 +24,7 @@ export default function AdminChatSidebar() {
     if (running) {
       setState((prev: any) => ({ ...prev, logs: [] }));
     }
-  }, [running, state]);
+  }, [running]);
 
   return (
     <CopilotSidebar
