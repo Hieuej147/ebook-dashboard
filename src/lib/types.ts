@@ -57,7 +57,5 @@ export interface AgentState {
   sources: Sources;
   selectedChapterNumber: number;
   logs: Log[];
-  worker_task: string
-  worker_report: string
   active_worker: string
 }

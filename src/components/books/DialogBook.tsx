@@ -68,7 +68,6 @@ export default memo(function DialogBook() {
   }, [isOpen]);
 
   const updateBookField = (field: string, value: any) => {
-    // ✅ SỬA: Dùng agent.setState thay cho setState từ context
     agent.setState({
       ...agent.state,
       book: {
@@ -91,7 +90,6 @@ export default memo(function DialogBook() {
 
     setAuthorName(author);
 
-    // ✅ SỬA: Dùng agent.setState thay cho setState từ context
     agent.setState({
       ...agent.state,
       book: {
@@ -169,7 +167,6 @@ export default memo(function DialogBook() {
       content: "",
     };
 
-    // ✅ SỬA: Dùng agent.setState thay cho setState từ context
     agent.setState({
       ...agent.state,
       book: {
@@ -187,7 +184,6 @@ export default memo(function DialogBook() {
         chapterNumber: i + 1,
       }));
 
-    // ✅ SỬA: Dùng agent.setState thay cho setState từ context
     agent.setState({
       ...agent.state,
       book: {

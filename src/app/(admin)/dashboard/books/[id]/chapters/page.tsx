@@ -112,7 +112,6 @@ const EditPage = () => {
     return () => window.removeEventListener("resize", check);
   }, []);
 
-  // ✅ SỬA: Restore data from DB
   useEffect(() => {
     async function restoreData() {
       if (!id) return;
@@ -162,7 +161,6 @@ const EditPage = () => {
     restoreData();
   }, [id, agent]);
 
-  // ✅ SỬA: refreshChapters
   const refreshChapters = useCallback(async () => {
     try {
       const res = await apiFetch(`/api/chapters/${id}`);
@@ -189,7 +187,6 @@ const EditPage = () => {
     }
   }, [id, agent]);
 
-  // ✅ SỬA: handleSelectChapter
   const handleSelectChapter = useCallback(
     (chapterNumber: number) => {
       agent.setState({ ...agent.state, selectedChapterNumber: chapterNumber });
@@ -205,7 +202,6 @@ const EditPage = () => {
     );
   }, [isRunning, sendMessage]);
 
-  // ✅ SỬA: handleDeleteChapter
   const handleDeleteChapter = useCallback(
     (targetChapterNumber: number) => {
       const filtered = chapters.filter(
@@ -230,7 +226,6 @@ const EditPage = () => {
     [chapters, selectedChapterNumber, agent],
   );
 
-  // ✅ SỬA: handleReorderChapters
   const handleReorderChapters = useCallback(
     (oldIndex: number, newIndex: number) => {
       const reordered = arrayMove(chapters, oldIndex, newIndex);

@@ -25,8 +25,6 @@ const defaultState: AgentState = {
   sources: {},
   selectedChapterNumber: 1,
   logs: [],
-  worker_task: "",
-  worker_report: "",
   active_worker: "",
 };
 
