@@ -59,6 +59,16 @@ export const AgentProvider = memo(
         hasInitialized.current = true;
       }
     }, [agent]);
+
+    const isThinking = useMemo(() => {
+      const messages = agent.messages || [];
+      const lastMessage = messages[messages.length - 1];
+      if (agent.isRunning && lastMessage?.role === Role.Assistant) {
+        return false;
+      }
+      return agent.isRunning;
+    }, [agent.isRunning, agent.messages]);
+
     const sendMessage = useCallback(
       (content: string) => {
         agent.addMessage({
@@ -87,12 +97,12 @@ export const AgentProvider = memo(
       () => ({
         state: currentState,
         setState: handleSetState,
-        running: agent.isRunning,
+        running: isThinking,
         sendMessage,
         nodeName: currentState?.active_worker || undefined,
         agent: agent,
       }),
-      [currentState, handleSetState, agent.isRunning, sendMessage],
+      [currentState, handleSetState, isThinking, sendMessage],
     );
 
     return (
