@@ -1,14 +1,6 @@
 "use client";
 
-import React, {
-  createContext,
-  useContext,
-  memo,
-  useEffect,
-  useCallback,
-  useMemo,
-  useRef,
-} from "react";
+import React, { createContext, useContext, useCallback, useMemo } from "react";
 import {
   useAgent,
   UseAgentUpdate,
@@ -28,6 +20,7 @@ interface AgentContextType {
 
 const AgentContext = createContext<AgentContextType | undefined>(undefined);
 
+// State mặc định dùng làm fallback nếu agent.state chưa có gì
 const defaultState: AgentState = {
   book: { title: "", topic: "", writingStyle: "", chapters: [] },
   sources: {},
@@ -38,82 +31,52 @@ const defaultState: AgentState = {
   active_worker: "",
 };
 
-export const AgentProvider = memo(
-  ({ children }: { children: React.ReactNode }) => {
-    const { agent } = useAgent({
-      agentId: "dashboard",
-      updates: [
-        UseAgentUpdate.OnStateChanged,
-        UseAgentUpdate.OnRunStatusChanged,
-      ],
-    });
-    const { copilotkit } = useCopilotKit();
-    const hasInitialized = useRef(false);
+export function AgentProvider({ children }: { children: React.ReactNode }) {
+  // 1. Khởi tạo Agent nguyên bản
+  const { agent } = useAgent({
+    agentId: "dashboard",
+    updates: [UseAgentUpdate.OnStateChanged, UseAgentUpdate.OnRunStatusChanged],
+  });
+  const { copilotkit } = useCopilotKit();
 
-    const currentState = (agent.state as AgentState) || defaultState;
-    useEffect(() => {
-      if (!hasInitialized.current && agent) {
-        if (!agent.state || Object.keys(agent.state).length === 0) {
-          agent.setState(defaultState);
-        }
-        hasInitialized.current = true;
-      }
-    }, []);
+  // 2. Ép kiểu (Type Casting) state gốc của Hook
+  const state = (agent.state as AgentState) || defaultState;
 
-    const isThinking = useMemo(() => {
-      const messages = agent.messages || [];
-      const lastMessage = messages[messages.length - 1];
-      if (agent.isRunning && lastMessage?.role === Role.Assistant) {
-        return false;
-      }
-      return agent.isRunning;
-    }, [agent.isRunning, agent.messages]);
+  // 3. Helper gửi lệnh (vẫn cần vì v2 yêu cầu addMessage + runAgent)
+  const sendMessage = useCallback(
+    (content: string) => {
+      agent.addMessage({
+        id: crypto.randomUUID(),
+        role: Role.User,
+        content,
+      });
+      copilotkit.runAgent({ agent });
+    },
+    [agent, copilotkit],
+  );
 
-    const sendMessage = useCallback(
-      (content: string) => {
-        agent.addMessage({
-          id: crypto.randomUUID(),
-          role: Role.User,
-          content,
-        });
-        copilotkit.runAgent({ agent });
-      },
-      [agent, copilotkit],
-    );
+  // 4. Đóng gói Context Value siêu gọn
+  const value = useMemo(
+    () => ({
+      state,
+      setState: agent.setState, // Dùng thẳng hàm setState của thư viện
+      running: agent.isRunning, // Dùng trạng thái gốc của thư viện
+      nodeName: state?.active_worker || undefined,
+      sendMessage,
+      agent,
+    }),
+    [state, agent, agent.isRunning, sendMessage],
+  );
 
-    const handleSetState = useCallback(
-      (newStateOrUpdater: any) => {
-        const currentAgentState = agent.state || defaultState;
-        let finalState =
-          typeof newStateOrUpdater === "function"
-            ? newStateOrUpdater(currentAgentState)
-            : newStateOrUpdater;
-        agent.setState(finalState);
-      },
-      [agent],
-    );
-
-    const value = useMemo(
-      () => ({
-        state: currentState,
-        setState: handleSetState,
-        running: isThinking,
-        sendMessage,
-        nodeName: currentState?.active_worker || undefined,
-        agent: agent,
-      }),
-      [currentState, handleSetState, isThinking, sendMessage],
-    );
-
-    return (
-      <AgentContext.Provider value={value}>{children}</AgentContext.Provider>
-    );
-  },
-);
+  return (
+    <AgentContext.Provider value={value}>{children}</AgentContext.Provider>
+  );
+}
 
 export const useLangChainAgent = () => {
   const context = useContext(AgentContext);
-  if (!context)
+  if (!context) {
     throw new Error("useLangChainAgent must be used within AgentProvider");
+  }
   return context;
 };
