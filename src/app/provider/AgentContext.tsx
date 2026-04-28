@@ -51,8 +51,6 @@ export const AgentProvider = memo(
     const hasInitialized = useRef(false);
 
     const currentState = (agent.state as AgentState) || defaultState;
-
-    // 1. Khởi tạo state (Giữ lại vì cần thiết)
     useEffect(() => {
       if (!hasInitialized.current && agent) {
         if (!agent.state || Object.keys(agent.state).length === 0) {
@@ -61,16 +59,6 @@ export const AgentProvider = memo(
         hasInitialized.current = true;
       }
     }, [agent]);
-
-    const isThinking = useMemo(() => {
-      const messages = agent.messages || [];
-      const lastMessage = messages[messages.length - 1];
-      if (agent.isRunning && lastMessage?.role === Role.Assistant) {
-        return false;
-      }
-      return agent.isRunning;
-    }, [agent.isRunning, agent.messages]);
-
     const sendMessage = useCallback(
       (content: string) => {
         agent.addMessage({
@@ -99,12 +87,12 @@ export const AgentProvider = memo(
       () => ({
         state: currentState,
         setState: handleSetState,
-        running: isThinking,
+        running: agent.isRunning,
         sendMessage,
         nodeName: currentState?.active_worker || undefined,
         agent: agent,
       }),
-      [currentState, handleSetState, isThinking, sendMessage],
+      [currentState, handleSetState, agent.isRunning, sendMessage],
     );
 
     return (
