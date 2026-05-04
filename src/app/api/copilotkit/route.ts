@@ -1,35 +1,24 @@
+// app/api/copilotkit/route.ts
 import { getSession } from "@/lib/session";
-import {
-  CopilotRuntime,
-  ExperimentalEmptyAdapter,
-  copilotRuntimeNextJSAppRouterEndpoint,
-  RemoteChain,
-} from "@copilotkit/runtime";
-import { LangGraphHttpAgent } from "@copilotkit/runtime/langgraph";
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 
-const serviceAdapter = new ExperimentalEmptyAdapter();
-const PYTHON_BASE_URL = process.env.DEPLOYMENT_URL || "http://localhost:8000";
+const HONO_URL = process.env.HONO_URL || "http://localhost:3001";
 
 export const POST = async (req: NextRequest) => {
   const session = await getSession();
 
-  const runtime = new CopilotRuntime({
-    agents: {
-      default: new LangGraphHttpAgent({
-        url: `${PYTHON_BASE_URL}/book-agent`,
-        headers: session?.accessToken
-          ? { authorization: `Bearer ${session.accessToken}` }
-          : {},
-      }),
+  const response = await fetch(`${HONO_URL}/api/copilotkit`, {
+    method: "POST",
+    headers: {
+      "Content-Type": req.headers.get("Content-Type") || "application/json",
+      Authorization: session?.accessToken
+        ? `Bearer ${session.accessToken}`
+        : "",
     },
+    body: req.body,
+    // @ts-ignore
+    duplex: "half", // cần cho streaming
   });
 
-  const { handleRequest } = copilotRuntimeNextJSAppRouterEndpoint({
-    runtime,
-    serviceAdapter,
-    endpoint: "/api/copilotkit",
-  });
-
-  return handleRequest(req);
+  return response;
 };

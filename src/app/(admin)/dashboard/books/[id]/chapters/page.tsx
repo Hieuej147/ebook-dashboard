@@ -57,7 +57,7 @@ const EditPage = () => {
     isRunning && nodeName === "edit_chapter_content_node";
   const isUpdatingOutline = isRunning && nodeName === "outline_node";
   const isEditingOutline = isRunning && nodeName === "edit_outline_node";
-  const isThinking = isRunning && nodeName === "call_model_node";
+  const isThinking = isRunning;
   const selectedChapterNumber = state.selectedChapterNumber || 1;
 
   const isModifyingChapters = isUpdatingOutline || isEditingOutline;
