@@ -1,4 +1,4 @@
-// app/api/copilotkit/route.ts
+// app/api/copilotkit/[...path]/route.ts
 import { getSession } from "@/lib/session";
 import { NextRequest } from "next/server";
 
@@ -6,12 +6,12 @@ const HONO_URL = process.env.HONO_URL || "http://localhost:3001";
 
 async function forwardRequest(req: NextRequest, method: string) {
   const session = await getSession();
-  const url = req.url.replace(
-    /.*\/api\/copilotkit/,
-    `${HONO_URL}/api/copilotkit`,
-  );
 
-  const response = await fetch(url, {
+  // Lấy path sau /api/copilotkit/
+  const pathname = req.nextUrl.pathname; // /api/copilotkit/info hoặc /api/copilotkit/agent/dashboard/connect
+  const targetUrl = `${HONO_URL}${pathname}${req.nextUrl.search}`;
+
+  const response = await fetch(targetUrl, {
     method,
     headers: {
       "Content-Type": req.headers.get("Content-Type") || "application/json",
