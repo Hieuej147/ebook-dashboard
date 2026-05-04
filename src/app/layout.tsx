@@ -2,9 +2,10 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
-import "@copilotkit/react-ui/styles.css"; 
+import "@copilotkit/react-ui/styles.css"; // Thêm dòng này
 import { AgentProvider } from "./provider/AgentContext";
 import CopilotKitCustom from "./provider/copilot-provider";
+import { getSession } from "@/lib/session";
 import "@copilotkit/react-core/v2/styles.css";
 
 const geistSans = Geist({
@@ -27,6 +28,8 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const session = await getSession();
+  const runtimeUrl = process.env.COPILOTKIT_RUNTIME_URL!;
   return (
     <html lang="en" suppressHydrationWarning>
       <body
@@ -39,6 +42,8 @@ export default async function RootLayout({
           disableTransitionOnChange
         >
           <CopilotKitCustom
+            accessToken={session?.accessToken}
+            runtime={runtimeUrl}
           >
             <AgentProvider>{children}</AgentProvider>
           </CopilotKitCustom>
